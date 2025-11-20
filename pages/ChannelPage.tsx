@@ -7,8 +7,10 @@ import VideoGrid from '../components/VideoGrid';
 import VideoCard from '../components/VideoCard';
 import VideoCardSkeleton from '../components/icons/VideoCardSkeleton';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { usePreference } from '../contexts/PreferenceContext';
 import HorizontalScrollContainer from '../components/HorizontalScrollContainer';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { BlockIcon } from '../components/icons/Icons';
 
 type Tab = 'home' | 'videos';
 
@@ -28,6 +30,7 @@ const ChannelPage: React.FC = () => {
     const [playerParams, setPlayerParams] = useState<string | null>(null);
     
     const { isSubscribed, subscribe, unsubscribe } = useSubscription();
+    const { addNgChannel, removeNgChannel, isNgChannel } = usePreference();
 
     useEffect(() => {
         const loadInitialDetails = async () => {
@@ -85,10 +88,18 @@ const ChannelPage: React.FC = () => {
                     setVideosPageToken(vData.nextPageToken);
                     break;
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(`Failed to load ${tab}`, err);
             if(tab === 'home') {
-                console.warn("Home tab fetch failed.");
+                const useProxy = localStorage.getItem('useChannelHomeProxy') !== 'false';
+                if (!useProxy) {
+                    if (window.confirm(`外部APIからのデータ取得に失敗しました。\nProxy経由に切り替えて再試行しますか？\n(設定メニューからも変更可能です)`)) {
+                        localStorage.setItem('useChannelHomeProxy', 'true');
+                        window.location.reload();
+                    }
+                } else {
+                    console.warn("Home tab fetch failed even with proxy.");
+                }
             } else {
                 setError(`[${tab}] タブの読み込みに失敗しました。`);
             }
@@ -122,6 +133,8 @@ const ChannelPage: React.FC = () => {
     if (!channelDetails) return null;
 
     const subscribed = isSubscribed(channelDetails.id);
+    const blocked = isNgChannel(channelDetails.id);
+
     const handleSubscriptionToggle = () => {
         if (!channelDetails.avatarUrl) return;
         const channel: Channel = {
@@ -134,6 +147,20 @@ const ChannelPage: React.FC = () => {
             unsubscribe(channel.id);
         } else {
             subscribe(channel);
+        }
+    };
+
+    const handleBlockToggle = () => {
+        if (blocked) {
+            if (window.confirm('このチャンネルのブロックを解除しますか？')) {
+                removeNgChannel(channelDetails.id);
+            }
+        } else {
+            if (window.confirm('このチャンネルをブロックしますか？\n検索結果やおすすめに表示されなくなります。')) {
+                addNgChannel(channelDetails.id);
+                // Optionally unsubscribe if blocked
+                if (subscribed) unsubscribe(channelDetails.id);
+            }
         }
     };
 
@@ -150,7 +177,12 @@ const ChannelPage: React.FC = () => {
         if (isTabLoading && !homeData) return <div className="text-center p-8">読み込み中...</div>;
         
         if (!homeData) {
-             return null; 
+             return (
+                <div className="text-center p-8 text-yt-light-gray">
+                    ホームコンテンツを表示できませんでした。<br/>
+                    <button onClick={() => setActiveTab('videos')} className="text-yt-blue hover:underline mt-2">動画タブを見る</button>
+                </div>
+             );
         }
         
         return (
@@ -250,21 +282,30 @@ const ChannelPage: React.FC = () => {
                     <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{channelDetails.name}</h1>
                     <div className="text-yt-light-gray text-sm mb-3 flex flex-wrap justify-center md:justify-start gap-x-2">
                          <span>{channelDetails.handle}</span>
-                         {/* Subscriber and Video count hidden per user request */}
                     </div>
                     <p className="text-yt-light-gray text-sm line-clamp-1 mb-3 max-w-2xl cursor-pointer mx-auto md:mx-0" onClick={() => alert(channelDetails.description)}>
                         {channelDetails.description}
                     </p>
-                    <button 
-                        onClick={handleSubscriptionToggle} 
-                        className={`px-4 md:px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                            subscribed 
-                            ? 'bg-yt-light dark:bg-[#272727] text-black dark:text-white hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]' 
-                            : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
-                        }`}
-                    >
-                        {subscribed ? '登録済み' : 'チャンネル登録'}
-                    </button>
+                    <div className="flex items-center justify-center md:justify-start gap-3">
+                        <button 
+                            onClick={handleSubscriptionToggle} 
+                            className={`px-4 md:px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                                subscribed 
+                                ? 'bg-yt-light dark:bg-[#272727] text-black dark:text-white hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]' 
+                                : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
+                            }`}
+                        >
+                            {subscribed ? '登録済み' : 'チャンネル登録'}
+                        </button>
+
+                        <button
+                            onClick={handleBlockToggle}
+                            className={`p-2 rounded-full transition-colors ${blocked ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-white' : 'bg-yt-light dark:bg-[#272727] text-black dark:text-white hover:bg-red-100 hover:text-red-600'}`}
+                            title={blocked ? 'ブロック解除' : 'このチャンネルをブロック'}
+                        >
+                            <BlockIcon />
+                        </button>
+                    </div>
                 </div>
             </div>
 

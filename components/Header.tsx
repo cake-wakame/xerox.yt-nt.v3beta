@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MenuIcon, YouTubeLogo, SearchIcon, BellIcon, LightbulbIcon, MoonIcon, SettingsIcon } from './icons/Icons';
+import { MenuIcon, YouTubeLogo, SearchIcon, BellIcon, LightbulbIcon, MoonIcon, SettingsIcon, SaveIcon, DownloadIcon } from './icons/Icons';
 import { useNotification } from '../contexts/NotificationContext';
 import { useSearchHistory } from '../contexts/SearchHistoryContext';
+import { usePreference } from '../contexts/PreferenceContext';
 import NotificationDropdown from './NotificationDropdown';
 import PreferenceModal from './PreferenceModal';
 
@@ -22,9 +23,11 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
 
   const { notifications, unreadCount, markAsRead } = useNotification();
   const { addSearchTerm } = useSearchHistory();
+  const { exportUserData, importUserData } = usePreference();
   const navigate = useNavigate();
   const notificationRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +55,17 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
       setUseProxy(newValue);
       localStorage.setItem('useChannelHomeProxy', String(newValue));
       window.location.reload();
+  };
+
+  const handleImportClick = () => {
+      fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          await importUserData(file);
+      }
   };
 
   useEffect(() => {
@@ -146,9 +160,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
             </button>
             
             {isSettingsOpen && (
-                <div className="absolute top-12 right-0 w-60 bg-yt-white dark:bg-yt-light-black rounded-lg shadow-lg border border-yt-spec-light-20 dark:border-yt-spec-20 py-2 overflow-hidden z-50">
+                <div className="absolute top-12 right-0 w-72 bg-yt-white dark:bg-yt-light-black rounded-lg shadow-lg border border-yt-spec-light-20 dark:border-yt-spec-20 py-2 overflow-hidden z-50">
                     <div className="py-2">
-                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">設定</div>
+                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">一般設定</div>
                         <label className="flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 cursor-pointer">
                             <span className="text-sm text-black dark:text-white">Proxy経由で取得</span>
                             <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
@@ -163,6 +177,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
                                 <div className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useProxy ? 'bg-yt-blue' : 'bg-yt-light-gray'}`}></div>
                             </div>
                         </label>
+                        
+                         <button 
+                            onClick={() => { setIsPreferenceModalOpen(true); setIsSettingsOpen(false); }}
+                            className="w-full text-left px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white"
+                        >
+                            おすすめ設定
+                        </button>
+
                          <button 
                             onClick={toggleTheme}
                             className="w-full text-left flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 sm:hidden"
@@ -170,6 +192,37 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
                             <span className="text-sm text-black dark:text-white">テーマ変更</span>
                              {theme === 'light' ? <MoonIcon /> : <LightbulbIcon />}
                         </button>
+
+                        <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
+                        
+                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">データのバックアップ (JSON)</div>
+                        
+                        <button 
+                            onClick={exportUserData}
+                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                        >
+                            <DownloadIcon />
+                            エクスポート (保存)
+                        </button>
+                        
+                        <button 
+                            onClick={handleImportClick}
+                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                        >
+                            <SaveIcon />
+                            インポート (復元)
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept=".json" 
+                            onChange={handleFileChange} 
+                        />
+
+                        <div className="px-4 py-2 text-xs text-yt-light-gray mt-1">
+                            登録チャンネル、履歴、設定を含みます。
+                        </div>
                     </div>
                 </div>
             )}

@@ -11,11 +11,15 @@ interface PreferenceModalProps {
 const PreferenceModal: React.FC<PreferenceModalProps> = ({ isOpen, onClose }) => {
     const { 
         preferredGenres, preferredChannels, 
-        preferredDurations, preferredFreshness, discoveryMode, ngKeywords,
+        preferredDurations, preferredFreshness, discoveryMode, ngKeywords, ngChannels,
+        prefDepth, prefVocal, prefEra, prefRegion,
+        prefLive, prefInfoEnt, prefPacing, prefVisual, prefCommunity,
         addPreferredGenre, removePreferredGenre, 
         addPreferredChannel, removePreferredChannel,
         togglePreferredDuration, setPreferredFreshness, setDiscoveryMode,
-        addNgKeyword, removeNgKeyword
+        addNgKeyword, removeNgKeyword, removeNgChannel,
+        setPrefDepth, setPrefVocal, setPrefEra, setPrefRegion,
+        setPrefLive, setPrefInfoEnt, setPrefPacing, setPrefVisual, setPrefCommunity
     } = usePreference();
 
     const [genreInput, setGenreInput] = useState('');
@@ -47,176 +51,281 @@ const PreferenceModal: React.FC<PreferenceModalProps> = ({ isOpen, onClose }) =>
             setNgInput('');
         }
     };
+    
+    const addQuickTag = (tag: string) => {
+        addPreferredGenre(tag);
+    }
+    
+    // Helper to handle both single string and array of strings for selection state
+    const ToggleGroup: React.FC<{ 
+        label: string, 
+        options: { id: string, label: string }[], 
+        current: string | string[], 
+        onChange: (val: string) => void 
+    }> = ({ label, options, current, onChange }) => {
+        const isSelected = (id: string) => {
+            if (Array.isArray(current)) {
+                return current.includes(id);
+            }
+            return current === id;
+        };
+
+        return (
+            <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-yt-light-gray uppercase tracking-wider">{label}</label>
+                <div className="flex gap-2 flex-wrap">
+                    {options.map(opt => (
+                        <button
+                            key={opt.id}
+                            onClick={() => onChange(opt.id)}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all transform active:scale-95 flex items-center justify-center gap-2 flex-1 min-w-[80px] ${
+                                isSelected(opt.id)
+                                ? 'bg-yt-blue text-white border-yt-blue shadow-md'
+                                : 'bg-yt-light dark:bg-yt-spec-10 text-yt-gray dark:text-yt-light-gray border-transparent hover:bg-gray-200 dark:hover:bg-yt-spec-20'
+                            }`}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={onClose}>
-            <div className="bg-yt-white dark:bg-yt-light-black w-full max-w-2xl max-h-[90vh] rounded-xl shadow-xl flex flex-col m-4" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center p-6 border-b border-yt-spec-light-20 dark:border-yt-spec-20">
-                    <h2 className="text-xl font-bold text-black dark:text-white">おすすめ設定</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]" onClick={onClose}>
+            <div className="bg-yt-white dark:bg-[#1f1f1f] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col m-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-6 border-b border-yt-spec-light-20 dark:border-yt-spec-20 flex-shrink-0 bg-yt-white dark:bg-[#1f1f1f]">
+                    <div>
+                        <h2 className="text-2xl font-black text-black dark:text-white tracking-tight">おすすめ表示の設定</h2>
+                        <p className="text-xs text-yt-light-gray mt-1">好みを設定して、AIによるレコメンド精度を向上させます</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 transition-colors">
                         <CloseIcon />
                     </button>
                 </div>
 
-                <div className="overflow-y-auto p-6 space-y-8 flex-1">
-                    {/* 1. Genres */}
+                <div className="overflow-y-auto p-6 space-y-10 flex-1">
+                    
+                    {/* Section 1: Vibe Check */}
                     <section>
-                        <h3 className="text-sm font-semibold text-yt-light-gray mb-2 uppercase tracking-wider">好きなジャンル・キーワード</h3>
-                        <form onSubmit={handleAddGenre} className="flex gap-2 mb-3">
-                            <input
-                                type="text"
-                                value={genreInput}
-                                onChange={(e) => setGenreInput(e.target.value)}
-                                placeholder="例: ゲーム, 料理, 猫"
-                                className="flex-1 bg-yt-light dark:bg-yt-black border border-yt-spec-light-20 dark:border-yt-spec-20 rounded-lg px-3 py-2 text-black dark:text-white focus:border-yt-blue outline-none"
+                         <h3 className="text-lg font-bold text-black dark:text-white mb-4 flex items-center gap-2">
+                            好み・雰囲気
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
+                             <ToggleGroup 
+                                label="映像スタイル" 
+                                current={prefVisual} 
+                                onChange={setPrefVisual} 
+                                options={[
+                                    { id: 'avatar', label: '2D/3D・アニメ' }, 
+                                    { id: 'real', label: '実写・リアル' }, 
+                                    { id: 'any', label: '両方好き' }
+                                ]} 
                             />
-                            <button type="submit" className="bg-yt-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90">追加</button>
-                        </form>
-                        <div className="flex flex-wrap gap-2">
-                            {preferredGenres.map((genre, idx) => (
-                                <span key={idx} className="inline-flex items-center bg-yt-spec-light-10 dark:bg-yt-spec-10 px-3 py-1 rounded-full text-sm text-black dark:text-white">
-                                    {genre}
-                                    <button onClick={() => removePreferredGenre(genre)} className="ml-2 text-yt-light-gray hover:text-yt-red">
-                                        <CloseIcon />
-                                    </button>
-                                </span>
-                            ))}
+                            <ToggleGroup 
+                                label="音声タイプ" 
+                                current={prefVocal} 
+                                onChange={setPrefVocal} 
+                                options={[
+                                    { id: 'instrumental', label: 'BGM・音のみ' }, 
+                                    { id: 'vocal', label: 'トーク・歌' }, 
+                                    { id: 'any', label: '指定なし' }
+                                ]} 
+                            />
                         </div>
                     </section>
 
-                    {/* 2. Channels */}
+                    {/* Section 2: Content Style */}
                     <section>
-                        <h3 className="text-sm font-semibold text-yt-light-gray mb-2 uppercase tracking-wider">よく見るチャンネル名</h3>
-                        <form onSubmit={handleAddChannel} className="flex gap-2 mb-3">
-                            <input
-                                type="text"
-                                value={channelInput}
-                                onChange={(e) => setChannelInput(e.target.value)}
-                                placeholder="例: HIKAKIN"
-                                className="flex-1 bg-yt-light dark:bg-yt-black border border-yt-spec-light-20 dark:border-yt-spec-20 rounded-lg px-3 py-2 text-black dark:text-white focus:border-yt-blue outline-none"
+                        <h3 className="text-lg font-bold text-black dark:text-white mb-4 flex items-center gap-2">
+                            動画の傾向
+                        </h3>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
+                            <ToggleGroup 
+                                label="内容の深さ" 
+                                current={prefDepth} 
+                                onChange={setPrefDepth} 
+                                options={[
+                                    { id: 'casual', label: '手軽に' }, 
+                                    { id: 'deep', label: 'じっくり' }, 
+                                    { id: 'any', label: '指定なし' }
+                                ]} 
                             />
-                            <button type="submit" className="bg-yt-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90">追加</button>
-                        </form>
-                        <div className="flex flex-wrap gap-2">
-                            {preferredChannels.map((channel, idx) => (
-                                <span key={idx} className="inline-flex items-center bg-yt-spec-light-10 dark:bg-yt-spec-10 px-3 py-1 rounded-full text-sm text-black dark:text-white">
-                                    {channel}
-                                    <button onClick={() => removePreferredChannel(channel)} className="ml-2 text-yt-light-gray hover:text-yt-red">
-                                        <CloseIcon />
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
+                             <ToggleGroup 
+                                label="ジャンル傾向" 
+                                current={prefInfoEnt} 
+                                onChange={setPrefInfoEnt} 
+                                options={[
+                                    { id: 'entertainment', label: 'エンタメ' }, 
+                                    { id: 'education', label: '知識・学習' }, 
+                                    { id: 'any', label: '指定なし' }
+                                ]} 
+                            />
+                            <ToggleGroup 
+                                label="出演スタイル" 
+                                current={prefCommunity} 
+                                onChange={setPrefCommunity} 
+                                options={[
+                                    { id: 'solo', label: 'ソロ' }, 
+                                    { id: 'collab', label: 'コラボ・多人数' }, 
+                                    { id: 'any', label: '指定なし' }
+                                ]} 
+                            />
+                         </div>
                     </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Question 1: Duration */}
-                        <section>
-                            <h3 className="text-sm font-semibold text-yt-light-gray mb-3 uppercase tracking-wider">動画の長さ</h3>
-                            <div className="flex flex-col gap-2">
-                                {['short', 'medium', 'long'].map((d) => {
-                                    const label = d === 'short' ? '短い (< 4分)' : d === 'medium' ? '普通 (4-20分)' : '長い (> 20分)';
-                                    const isSelected = preferredDurations.includes(d);
-                                    return (
-                                        <button
-                                            key={d}
-                                            onClick={() => togglePreferredDuration(d)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-left border transition-colors ${
-                                                isSelected 
-                                                ? 'bg-yt-blue text-white border-yt-blue' 
-                                                : 'bg-transparent text-black dark:text-white border-yt-spec-light-20 dark:border-yt-spec-20 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10'
-                                            }`}
-                                        >
-                                            {label}
-                                        </button>
-                                    );
-                                })}
-                                <p className="text-xs text-yt-light-gray mt-1">※ 選択しない場合は全て表示</p>
-                            </div>
-                        </section>
+                    <hr className="border-yt-spec-light-20 dark:border-yt-spec-20" />
 
-                        {/* Question 2: Freshness */}
-                        <section>
-                            <h3 className="text-sm font-semibold text-yt-light-gray mb-3 uppercase tracking-wider">動画の鮮度</h3>
-                            <div className="flex flex-col gap-2">
-                                {[
-                                    { id: 'new', label: '新しい動画重視' },
-                                    { id: 'popular', label: '人気・定番重視' },
-                                    { id: 'balanced', label: 'バランスよく' }
-                                ].map((f) => (
-                                    <button
-                                        key={f.id}
-                                        onClick={() => setPreferredFreshness(f.id)}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-left border transition-colors ${
-                                            preferredFreshness === f.id 
-                                            ? 'bg-yt-blue text-white border-yt-blue' 
-                                            : 'bg-transparent text-black dark:text-white border-yt-spec-light-20 dark:border-yt-spec-20 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10'
+                    {/* Section 3: Specific Interests (Tags) */}
+                    <section>
+                        <h3 className="text-lg font-bold text-black dark:text-white mb-4 flex items-center gap-2">
+                            キーワード・タグ設定
+                        </h3>
+                        
+                        <div className="mb-4">
+                            <p className="text-xs text-yt-light-gray mb-2 font-bold uppercase">人気のタグ</p>
+                            <div className="flex flex-wrap gap-2">
+                                {['Vtuber', '都市伝説', 'Gaming', '歌ってみた', 'ASMR', 'ボカロ', '料理', '猫', 'メイク'].map(tag => (
+                                    <button 
+                                        key={tag}
+                                        onClick={() => addQuickTag(tag)}
+                                        disabled={preferredGenres.includes(tag)}
+                                        className={`px-3 py-1 rounded-full text-sm font-medium border transition-all ${
+                                            preferredGenres.includes(tag)
+                                            ? 'bg-yt-blue/20 border-yt-blue text-yt-blue cursor-default'
+                                            : 'bg-transparent border-yt-spec-light-20 dark:border-yt-spec-20 text-black dark:text-white hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10'
                                         }`}
                                     >
-                                        {f.label}
+                                        + {tag}
                                     </button>
                                 ))}
                             </div>
-                        </section>
+                        </div>
 
-                        {/* Question 3: Discovery Mode */}
-                        <section>
-                            <h3 className="text-sm font-semibold text-yt-light-gray mb-3 uppercase tracking-wider">発見のバランス</h3>
-                            <div className="flex flex-col gap-2">
-                                {[
-                                    { id: 'subscribed', label: '登録Ch中心' },
-                                    { id: 'discovery', label: '新規開拓中心' },
-                                    { id: 'balanced', label: 'バランスよく' }
-                                ].map((m) => (
-                                    <button
-                                        key={m.id}
-                                        onClick={() => setDiscoveryMode(m.id)}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-left border transition-colors ${
-                                            discoveryMode === m.id 
-                                            ? 'bg-yt-blue text-white border-yt-blue' 
-                                            : 'bg-transparent text-black dark:text-white border-yt-spec-light-20 dark:border-yt-spec-20 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10'
-                                        }`}
-                                    >
-                                        {m.label}
-                                    </button>
-                                ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {/* Genres Input */}
+                            <div>
+                                <form onSubmit={handleAddGenre} className="flex gap-2 mb-3">
+                                    <input
+                                        type="text"
+                                        value={genreInput}
+                                        onChange={(e) => setGenreInput(e.target.value)}
+                                        placeholder="好きなキーワードを追加..."
+                                        className="flex-1 bg-yt-light dark:bg-black border border-transparent focus:border-yt-blue rounded-xl px-4 py-2.5 text-black dark:text-white outline-none text-sm transition-colors"
+                                    />
+                                    <button type="submit" className="bg-yt-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-80 transition-opacity">追加</button>
+                                </form>
+                                <div className="flex flex-wrap gap-2">
+                                    {preferredGenres.map((genre, idx) => (
+                                        <span key={idx} className="inline-flex items-center bg-yt-blue text-white px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+                                            {genre}
+                                            <button onClick={() => removePreferredGenre(genre)} className="ml-2 hover:text-black/50">
+                                                <CloseIcon />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
-                        </section>
-                    </div>
 
-                    {/* NG Settings */}
-                    <section className="pt-4 border-t border-yt-spec-light-20 dark:border-yt-spec-20">
-                        <h3 className="text-sm font-semibold text-red-500 mb-2 uppercase tracking-wider">NGワード・ジャンル (除外)</h3>
-                        <form onSubmit={handleAddNg} className="flex gap-2 mb-3">
-                            <input
-                                type="text"
-                                value={ngInput}
-                                onChange={(e) => setNgInput(e.target.value)}
-                                placeholder="除外したい単語 (例: ホラー, 虫)"
-                                className="flex-1 bg-yt-light dark:bg-yt-black border border-yt-spec-light-20 dark:border-yt-spec-20 rounded-lg px-3 py-2 text-black dark:text-white focus:border-red-500 outline-none"
-                            />
-                            <button type="submit" className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90">追加</button>
-                        </form>
-                        <div className="flex flex-wrap gap-2">
-                            {ngKeywords.map((keyword, idx) => (
-                                <span key={idx} className="inline-flex items-center bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-3 py-1 rounded-full text-sm text-red-800 dark:text-red-200">
-                                    {keyword}
-                                    <button onClick={() => removeNgKeyword(keyword)} className="ml-2 hover:text-red-900 dark:hover:text-white">
-                                        <CloseIcon />
-                                    </button>
-                                </span>
-                            ))}
+                            {/* Channels Input */}
+                            <div>
+                                <form onSubmit={handleAddChannel} className="flex gap-2 mb-3">
+                                    <input
+                                        type="text"
+                                        value={channelInput}
+                                        onChange={(e) => setChannelInput(e.target.value)}
+                                        placeholder="好きなチャンネル名..."
+                                        className="flex-1 bg-yt-light dark:bg-black border border-transparent focus:border-yt-blue rounded-xl px-4 py-2.5 text-black dark:text-white outline-none text-sm transition-colors"
+                                    />
+                                    <button type="submit" className="bg-yt-black dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-80 transition-opacity">追加</button>
+                                </form>
+                                <div className="flex flex-wrap gap-2">
+                                    {preferredChannels.map((channel, idx) => (
+                                        <span key={idx} className="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+                                            {channel}
+                                            <button onClick={() => removePreferredChannel(channel)} className="ml-2 hover:text-black/50">
+                                                <CloseIcon />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </section>
 
-                    <div className="bg-yt-spec-light-10 dark:bg-yt-spec-10 p-4 rounded-lg text-sm text-yt-light-gray">
-                        <p>これらの設定に基づいて、おすすめ動画の表示アルゴリズムがリアルタイムに調整されます。NGワードに含まれる単語がタイトルやチャンネル名にある動画は表示されなくなります。</p>
+                    <hr className="border-yt-spec-light-20 dark:border-yt-spec-20" />
+                    
+                    {/* Extra Settings */}
+                     <section>
+                        <h3 className="text-sm font-bold text-yt-light-gray mb-4 uppercase tracking-wider">検索フィルター設定</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                            <ToggleGroup 
+                                label="動画の長さ" 
+                                current={preferredDurations} 
+                                onChange={togglePreferredDuration} 
+                                options={[
+                                    { id: 'short', label: '短い (4分未満)' }, 
+                                    { id: 'medium', label: '普通 (4-20分)' }, 
+                                    { id: 'long', label: '長い (20分以上)' }
+                                ]} 
+                            />
+                            <ToggleGroup 
+                                label="新しさ" 
+                                current={preferredFreshness} 
+                                onChange={setPreferredFreshness} 
+                                options={[
+                                    { id: 'new', label: '最新' }, 
+                                    { id: 'popular', label: '人気順' }, 
+                                    { id: 'balanced', label: 'バランス' }
+                                ]} 
+                            />
+                            <ToggleGroup 
+                                label="選出モード" 
+                                current={discoveryMode} 
+                                onChange={setDiscoveryMode} 
+                                options={[
+                                    { id: 'subscribed', label: '登録Ch優先' }, 
+                                    { id: 'discovery', label: '新規開拓' }, 
+                                    { id: 'balanced', label: 'バランス' }
+                                ]} 
+                            />
+                        </div>
+                    </section>
+
+                    {/* NG Zone */}
+                    <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                        <h3 className="text-sm font-bold text-red-500 mb-3 uppercase tracking-wider">⛔ NG設定（ブロック・除外）</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <form onSubmit={handleAddNg} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={ngInput}
+                                    onChange={(e) => setNgInput(e.target.value)}
+                                    placeholder="除外したい単語を入力..."
+                                    className="flex-1 bg-white dark:bg-black border border-transparent focus:border-red-500 rounded-lg px-3 py-2 text-black dark:text-white outline-none text-sm"
+                                />
+                                <button type="submit" className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-600">NG追加</button>
+                            </form>
+                             <div className="flex flex-wrap gap-2">
+                                {ngKeywords.map((k, i) => (
+                                    <span key={i} className="inline-flex items-center bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold">
+                                        {k} <button onClick={() => removeNgKeyword(k)} className="ml-1"><CloseIcon /></button>
+                                    </span>
+                                ))}
+                                {ngChannels.map((id, i) => (
+                                    <span key={i} className="inline-flex items-center bg-red-100 text-red-600 px-2 py-1 rounded-md text-xs font-bold">
+                                        ID:{id} <button onClick={() => removeNgChannel(id)} className="ml-1"><CloseIcon /></button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div className="p-6 border-t border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-end bg-yt-white dark:bg-yt-light-black rounded-b-xl">
-                    <button onClick={onClose} className="bg-yt-blue text-white font-semibold px-6 py-2.5 hover:bg-yt-blue/90 rounded-full shadow-md transition-all active:scale-95">
-                        設定を完了する
+                <div className="p-6 border-t border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-end bg-yt-white dark:bg-[#1f1f1f]">
+                    <button onClick={onClose} className="bg-yt-blue text-white font-bold px-8 py-3 hover:bg-yt-blue/90 rounded-xl shadow-lg transform transition-all active:scale-95">
+                        設定を保存
                     </button>
                 </div>
             </div>

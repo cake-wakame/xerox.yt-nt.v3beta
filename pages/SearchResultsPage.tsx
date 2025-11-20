@@ -8,10 +8,12 @@ import SearchChannelResultCard from '../components/SearchChannelResultCard';
 import SearchPlaylistResultCard from '../components/SearchPlaylistResultCard';
 import ShortsShelf from '../components/ShortsShelf';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { usePreference } from '../contexts/PreferenceContext';
 
 const SearchResultsPage: React.FC = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('search_query');
+    const { ngKeywords, ngChannels } = usePreference();
     
     const [videos, setVideos] = useState<Video[]>([]);
     const [shorts, setShorts] = useState<Video[]>([]);
@@ -23,6 +25,34 @@ const SearchResultsPage: React.FC = () => {
     
     const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+    // Filter function
+    const isContentAllowed = useCallback((item: Video | Channel | ApiPlaylist) => {
+        const lowerQuery = (text: string) => text.toLowerCase();
+        
+        // Check blocked channel IDs
+        let channelId = '';
+        if ('channelId' in item) channelId = item.channelId; // Video
+        else if ('id' in item && 'subscriberCount' in item) channelId = item.id; // Channel (id is channelId)
+        
+        if (channelId && ngChannels.includes(channelId)) {
+            return false;
+        }
+
+        // Check NG Keywords in Title, Description, Channel Name
+        let textToScan = '';
+        if ('title' in item) textToScan += item.title + ' ';
+        if ('descriptionSnippet' in item) textToScan += item.descriptionSnippet + ' ';
+        if ('channelName' in item) textToScan += item.channelName + ' ';
+        if ('name' in item) textToScan += item.name + ' '; // Channel name
+        
+        const scannedText = lowerQuery(textToScan);
+        if (ngKeywords.some(keyword => scannedText.includes(lowerQuery(keyword)))) {
+            return false;
+        }
+
+        return true;
+    }, [ngChannels, ngKeywords]);
 
     const performSearch = useCallback(async (searchQuery: string, pageToken: string = '1') => {
         if (!searchQuery) return;
@@ -37,13 +67,19 @@ const SearchResultsPage: React.FC = () => {
         try {
             const results = await searchVideos(searchQuery, pageToken);
             
+            // Apply Filtering
+            const filteredVideos = results.videos.filter(isContentAllowed);
+            const filteredShorts = results.shorts.filter(isContentAllowed);
+            const filteredChannels = results.channels.filter(isContentAllowed);
+            const filteredPlaylists = results.playlists.filter(isContentAllowed);
+
             if (pageToken === '1') {
-                setVideos(results.videos);
-                setShorts(results.shorts);
-                setChannels(results.channels);
-                setPlaylists(results.playlists);
+                setVideos(filteredVideos);
+                setShorts(filteredShorts);
+                setChannels(filteredChannels);
+                setPlaylists(filteredPlaylists);
             } else {
-                setVideos(prev => [...prev, ...results.videos]);
+                setVideos(prev => [...prev, ...filteredVideos]);
             }
             setNextPageToken(results.nextPageToken);
         } catch (err: any) {
@@ -53,7 +89,7 @@ const SearchResultsPage: React.FC = () => {
             setIsLoading(false);
             setIsFetchingMore(false);
         }
-    }, []);
+    }, [isContentAllowed]);
 
     useEffect(() => {
         // Reset state on new query
@@ -101,7 +137,7 @@ const SearchResultsPage: React.FC = () => {
     }
 
     if (videos.length === 0 && channels.length === 0 && playlists.length === 0 && shorts.length === 0 && query) {
-        return <div className="text-center mt-10">「{query}」の検索結果はありません。</div>
+        return <div className="text-center mt-10">「{query}」の検索結果はありません。<br/><span className="text-xs text-yt-light-gray">※NG設定により非表示になっている可能性があります</span></div>
     }
 
     return (

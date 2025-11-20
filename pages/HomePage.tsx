@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import VideoGrid from '../components/VideoGrid';
 import { getRecommendedVideos } from '../utils/api';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -9,7 +9,7 @@ import { usePreference } from '../contexts/PreferenceContext';
 import { getDeeplyAnalyzedRecommendations } from '../utils/recommendation';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import type { Video } from '../types';
-import { SearchIcon } from '../components/icons/Icons';
+import { SearchIcon, ImportExportIcon, SaveIcon, DownloadIcon } from '../components/icons/Icons';
 
 const HomePage: React.FC = () => {
     const [recommendedVideos, setRecommendedVideos] = useState<Video[]>([]);
@@ -21,7 +21,8 @@ const HomePage: React.FC = () => {
     const { subscribedChannels } = useSubscription();
     const { searchHistory } = useSearchHistory();
     const { history: watchHistory } = useHistory();
-    const { preferredGenres, preferredChannels } = usePreference();
+    const { preferredGenres, preferredChannels, exportUserData, importUserData } = usePreference();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ユーザーが「新規（データなし）」かどうかを判定
     const isNewUser = useMemo(() => {
@@ -107,6 +108,17 @@ const HomePage: React.FC = () => {
 
     const lastElementRef = useInfiniteScroll(loadMore, true, isFetchingMore || isLoading);
 
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            await importUserData(file);
+        }
+    };
+
     // 新規ユーザー、または動画がない場合のガイド表示
     if ((isNewUser || (recommendedVideos.length === 0 && !isLoading))) {
         return (
@@ -121,6 +133,30 @@ const HomePage: React.FC = () => {
                     <br />
                     上の検索バーから、好きなキーワードで検索してみてください！
                 </p>
+
+                <div className="flex gap-4">
+                    <button 
+                        onClick={exportUserData}
+                        className="flex items-center gap-2 px-4 py-2 bg-yt-light dark:bg-yt-spec-10 rounded-lg hover:bg-gray-200 dark:hover:bg-yt-spec-20 transition-colors text-sm font-medium"
+                    >
+                        <DownloadIcon />
+                        設定をエクスポート
+                    </button>
+                    <button 
+                        onClick={handleImportClick}
+                        className="flex items-center gap-2 px-4 py-2 bg-yt-light dark:bg-yt-spec-10 rounded-lg hover:bg-gray-200 dark:hover:bg-yt-spec-20 transition-colors text-sm font-medium"
+                    >
+                        <SaveIcon />
+                        データを復元 (インポート)
+                    </button>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept=".json" 
+                        onChange={handleFileChange} 
+                    />
+                </div>
             </div>
         );
     }

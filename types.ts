@@ -11,6 +11,7 @@ export interface Video {
   views: string;
   uploadedAt: string;
   descriptionSnippet?: string;
+  collaborators?: Channel[]; // 複数チャンネル対応
 }
 
 export interface ChannelBadge {
@@ -31,7 +32,6 @@ export interface VideoDetails extends Video {
   likes: string;
   dislikes: string;
   channel: Channel;
-  collaborators?: Channel[]; // 複数チャンネル対応
   relatedVideos: Video[];
 }
 
