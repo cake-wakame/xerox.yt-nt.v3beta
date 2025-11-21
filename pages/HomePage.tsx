@@ -199,16 +199,37 @@ const HomePage: React.FC = () => {
         <div className="pb-10">
             {error && <div className="text-red-500 text-center mb-4">{error}</div>}
             
-            {shortsFeed.length > 0 && (
+            {/* Show shorts shelf if it has items OR if we are in the initial loading state to show skeletons */}
+            {(shortsFeed.length > 0 || isLoading) && (
                 <div className="mb-8">
-                    <ShortsShelf shorts={shortsFeed} isLoading={false} />
+                    <ShortsShelf shorts={shortsFeed} isLoading={isLoading && shortsFeed.length === 0} />
                     <hr className="border-yt-spec-light-20 dark:border-yt-spec-20 mt-6" />
                 </div>
             )}
 
-            <VideoGrid videos={feed} isLoading={false} />
+            {/* Show grid only when not in initial loading state */}
+            {!isLoading && <VideoGrid videos={feed} isLoading={false} />}
 
-            {(isLoading || isFetchingMore) && (
+            {/* Skeletons for initial loading */}
+            {isLoading && (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8">
+                    {Array.from({ length: 20 }).map((_, index) => (
+                         <div key={index} className="flex flex-col animate-pulse">
+                            <div className="w-full aspect-video bg-yt-light dark:bg-yt-dark-gray rounded-xl mb-3"></div>
+                            <div className="flex gap-3">
+                                <div className="w-9 h-9 rounded-full bg-yt-light dark:bg-yt-dark-gray"></div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-yt-light dark:bg-yt-dark-gray rounded w-3/4"></div>
+                                    <div className="h-4 bg-yt-light dark:bg-yt-dark-gray rounded w-1/2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+            
+            {/* Skeletons for infinite scroll loading */}
+            {isFetchingMore && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-8 mt-8">
                     {Array.from({ length: 10 }).map((_, index) => (
                          <div key={index} className="flex flex-col animate-pulse">
@@ -224,6 +245,7 @@ const HomePage: React.FC = () => {
                     ))}
                 </div>
             )}
+
 
             {!isLoading && hasNextPage && feed.length > 0 && (
                 <div ref={lastElementRef} className="h-20 flex justify-center items-center" />
