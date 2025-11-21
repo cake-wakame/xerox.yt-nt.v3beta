@@ -1,3 +1,4 @@
+
 import type { Video, Channel } from '../types';
 import { searchVideos, getChannelVideos } from './api';
 
@@ -94,7 +95,7 @@ const validateVideo = (
     const fullText = `${lowerTitle} ${lowerDesc} ${lowerChannel}`;
     
     // 0. Xerox Specific Filter
-    // "xerox"を含み、かつ指定のチャンネルIDではない場合除外
+    // "xerox"を含み、かつ指定のチャンネルID(UCCMV3NfZk_NB-MmUvHj6aFw)ではない場合除外
     if (fullText.includes('xerox') && video.channelId !== 'UCCMV3NfZk_NB-MmUvHj6aFw') {
         return { isValid: false, score: -9999, reasons: ['Keyword Exclusion: Xerox'] };
     }
@@ -183,7 +184,8 @@ export const getDeeplyAnalyzedRecommendations = async (sources: RecommendationSo
     const queries: Set<string> = new Set();
     
     // 取得するクエリの総数
-    const TOTAL_QUERIES = 8;
+    // ページ1の場合は速度優先でクエリを減らす (3), それ以降は多様性重視 (8)
+    const TOTAL_QUERIES = page === 1 ? 3 : 8;
     
     // ソース群の定義と重み付け（動的に計算）
     

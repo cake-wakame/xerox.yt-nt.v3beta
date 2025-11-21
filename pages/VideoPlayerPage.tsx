@@ -99,43 +99,50 @@ const VideoPlayerPage: React.FC = () => {
                 window.scrollTo(0, 0);
             }
 
-            const detailsPromise = getVideoDetails(videoId);
-            const commentsPromise = getComments(videoId);
-            
-            try {
-                const [details, commentsData] = await Promise.all([
-                    detailsPromise, 
-                    commentsPromise
-                ]);
-                
-                if (isMounted) {
-                    setVideoDetails(details);
-                    setComments(commentsData);
-                    
-                    if (details.relatedVideos && details.relatedVideos.length > 0) {
-                        setRelatedVideos(details.relatedVideos);
+            // 1. Video Details (Highest Priority)
+            getVideoDetails(videoId)
+                .then(details => {
+                    if (isMounted) {
+                        setVideoDetails(details);
+                        if (details.relatedVideos && details.relatedVideos.length > 0) {
+                            setRelatedVideos(details.relatedVideos);
+                        }
+                        addVideoToHistory(details);
+                        // Stop loading here so the player shows up immediately
+                        setIsLoading(false);
                     }
+                })
+                .catch(err => {
+                    if (isMounted) {
+                        setError(err.message || '動画の読み込みに失敗しました。');
+                        console.error(err);
+                        setIsLoading(false);
+                    }
+                });
 
-                    addVideoToHistory(details);
-                    setIsLoading(false);
-                }
-                
-                getExternalRelatedVideos(videoId).then(externalRelated => {
+            // 2. Comments (Background)
+            getComments(videoId)
+                .then(commentsData => {
+                    if (isMounted) {
+                        setComments(commentsData);
+                    }
+                })
+                .catch(err => {
+                    console.warn("Failed to fetch comments", err);
+                });
+
+            // 3. External Related Videos (Background)
+            getExternalRelatedVideos(videoId)
+                .then(externalRelated => {
                     if (isMounted && externalRelated && externalRelated.length > 0) {
                         setRelatedVideos(externalRelated);
                     }
-                }).catch(extErr => {
+                })
+                .catch(extErr => {
                     console.warn("Failed to fetch external related videos", extErr);
                 });
-
-            } catch (err: any) {
-                if (isMounted) {
-                    setError(err.message || '動画の読み込みに失敗しました。');
-                    console.error(err);
-                    setIsLoading(false);
-                }
-            }
         };
+
         fetchVideoData();
 
         return () => {
@@ -385,11 +392,15 @@ const VideoPlayerPage: React.FC = () => {
                         <div className="flex items-center mb-6">
                             <h2 className="text-xl font-bold">{comments.length.toLocaleString()}件のコメント</h2>
                         </div>
-                        <div className="space-y-4">
-                            {comments.map(comment => (
-                                <CommentComponent key={comment.comment_id} comment={comment} />
-                            ))}
-                        </div>
+                        {comments.length > 0 ? (
+                            <div className="space-y-4">
+                                {comments.map(comment => (
+                                    <CommentComponent key={comment.comment_id} comment={comment} />
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="py-4 text-yt-light-gray">コメントの読み込み中、またはコメントがありません。</div>
+                        )}
                     </div>
                 </div>
             </div>
