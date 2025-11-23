@@ -408,14 +408,21 @@ const VideoPlayerPage: React.FC = () => {
                      <PlaylistPanel playlist={currentPlaylist} authorName={currentPlaylist.authorName} videos={playlistVideos} currentVideoId={videoId} isShuffle={isShuffle} isLoop={isLoop} toggleShuffle={toggleShuffle} toggleLoop={toggleLoop} onReorder={handlePlaylistReorder} />
                 )}
                 
-                {/* Related Videos */}
-                {!currentPlaylist && relatedVideos.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                         {relatedVideos.map((video, index) => (
-                             <RelatedVideoCard key={`${video.id}-${index}`} video={video} />
-                         ))}
-                    </div>
-                )}
+                {/* Filter Chips (Visual only) */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 pt-0">
+                    <button className="px-3 py-1.5 bg-black dark:bg-white text-white dark:text-black text-xs md:text-sm font-semibold rounded-lg whitespace-nowrap">すべて</button>
+                </div>
+
+                {/* Render Related Videos */}
+                <div className="flex flex-col space-y-3">
+                    {relatedVideos.length > 0 ? (
+                        relatedVideos.map(video => (
+                            <RelatedVideoCard key={video.id} video={video} />
+                        ))
+                    ) : (
+                        !isLoading && <div className="text-center py-4 text-yt-light-gray">関連動画が見つかりません</div>
+                    )}
+                </div>
 
                 {/* Mobile Comments Fallback */}
                 <div className="block lg:hidden mt-8 border-t border-yt-spec-light-20 dark:border-yt-spec-20 pt-4">
