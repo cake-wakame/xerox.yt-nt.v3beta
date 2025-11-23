@@ -1,7 +1,7 @@
 
 import type { Video, Channel } from '../types';
-import { searchVideos, getVideoDetails, getChannelVideos, getRecommendedVideos, getExternalRelatedVideos } from './api';
-import { buildUserProfile, rankVideos, inferTopInterests, type UserProfile } from './xrai';
+import { searchVideos, getRecommendedVideos } from './api';
+import { extractKeywords } from './xrai';
 
 // --- Types ---
 
@@ -27,132 +27,103 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return newArray;
 };
 
+// Helper to clean up titles for better search queries
+const cleanTitleForSearch = (title: string): string => {
+    // Remove common noise like brackets, official, etc.
+    return title.replace(/【.*?】|\[.*?\]|\(.*?\)/g, '').trim().split(' ').slice(0, 4).join(' ');
+};
+
 /**
- * XRAI v4 Recommendation Engine
- * Based on "Deep Neural Networks for YouTube Recommendations" (Covington et al., 2016)
+ * Random History-Based Recommendation Engine
  * 
- * Architecture:
- * 1. Candidate Generation (Retrieval):
- *    - Collaborative Filtering Proxy: Using "Related Videos" of recent history (Item-to-Item co-visitation).
- *    - Content-Based: Search results from inferred interests.
- *    - Freshness: Recent uploads from subscriptions.
- * 
- * 2. Ranking:
- *    - Scored by "Predicted Watch Time" rather than just Click Probability.
- *    - Features: Semantics (Vector), Freshness (Example Age), Engagement.
+ * Logic:
+ * 1. Pick 10 random videos from watch history as "seeds".
+ * 2. Search for related content for ALL 10 seeds to get a large candidate pool (5x volume).
+ * 3. Apply strict keyword filtering: A candidate MUST match keywords from user's history to be included.
+ * 4. Shuffle thoroughly to mix categories.
  */
 export const getXraiRecommendations = async (sources: RecommendationSource): Promise<Video[]> => {
     const { 
         watchHistory, 
-        searchHistory, 
-        subscribedChannels, 
-        preferredGenres,
-        page
+        subscribedChannels,
+        ngKeywords,
+        ngChannels
     } = sources;
 
-    // --- PHASE 1: CANDIDATE GENERATION (Retrieval) ---
-    // Goal: Broadly select high-recall candidates from different sources.
-
-    const candidatePromises: Promise<Video[]>[] = [];
-
-    // Source A: Collaborative Filtering Proxy (Related Videos)
-    // The paper relies on "users who watched X also watched Y". 
-    // We use the API's `relatedVideos` of the user's *most recent* and *most frequently watched* content as a proxy for this.
-    if (watchHistory.length > 0) {
-        // 1. The very last video watched (Immediate context)
-        candidatePromises.push(
-            getExternalRelatedVideos(watchHistory[0].id).catch(() => [])
-        );
-
-        // 2. A random video from the last 10 (Discovery within comfort zone)
-        if (watchHistory.length > 1) {
-            const randomRecent = watchHistory[Math.floor(Math.random() * Math.min(watchHistory.length, 10))];
-            candidatePromises.push(
-                getExternalRelatedVideos(randomRecent.id).catch(() => [])
-            );
-        }
-    }
-
-    // Source B: Semantic Search (Inferred Interests)
-    // Extract latent concepts from user history + explicit preferences
-    const userProfile = buildUserProfile({
-        watchHistory,
-        searchHistory,
-        subscribedChannels,
-    });
+    // --- 1. SEED SELECTION ---
+    let seeds: string[] = [];
     
-    const inferredTopics = inferTopInterests(userProfile, 4); // Top 4 concepts
-    const activeTopics = Array.from(new Set([...preferredGenres, ...inferredTopics])).slice(0, 5);
-
-    if (activeTopics.length > 0) {
-        // Create a dense query to fetch "New" and "Relevant" content
-        // We rotate topics based on page number to ensure variety across infinite scroll
-        const topicIndex = (page - 1) % activeTopics.length;
-        const focusTopic = activeTopics[topicIndex];
-        
-        // Query 1: Fresh content for the topic
-        candidatePromises.push(
-            searchVideos(`${focusTopic}`, String(page))
-                .then(res => res.videos)
-                .catch(() => [])
-        );
-        
-        // Query 2: "New" content (Discovery) - only on first page or every 3rd page
-        if (page === 1 || page % 3 === 0) {
-             candidatePromises.push(
-                searchVideos(`${focusTopic} new`, '1')
-                    .then(res => res.videos)
-                    .catch(() => [])
-            );
-        }
-    } else if (page === 1) {
-        // Cold Start: Generic trending in Japan
-        candidatePromises.push(
-            searchVideos("Japan trending", '1').then(res => res.videos).catch(() => [])
-        );
+    if (watchHistory.length > 0) {
+        // Pick 10 random videos from history
+        const historySample = shuffleArray(watchHistory).slice(0, 10);
+        seeds = historySample.map(v => `${cleanTitleForSearch(v.title)} related`);
+    } else if (subscribedChannels.length > 0) {
+        // Fallback to subscriptions if no history
+        const subSample = shuffleArray(subscribedChannels).slice(0, 5);
+        seeds = subSample.map(c => `${c.name} videos`);
+    } else {
+        // Cold start
+        seeds = ["Trending Japan", "Popular Music", "Gaming", "Cooking", "Vlog"];
     }
 
-    // Source C: Subscriptions (The "Subscribe" Signal)
-    // The paper notes subscribed channels are a strong signal of interest.
-    if (subscribedChannels.length > 0) {
-        // Pick 2 random channels to check for recent updates
-        const randomSubs = shuffleArray(subscribedChannels).slice(0, 2);
-        randomSubs.forEach(sub => {
-            candidatePromises.push(
-                getChannelVideos(sub.id).then(res => res.videos.slice(0, 8)).catch(() => [])
-            );
+    // --- 2. CANDIDATE GENERATION (High Volume) ---
+    // Fetch results for ALL seeds concurrently
+    const searchPromises = seeds.map(query => 
+        searchVideos(query, '1').then(res => res.videos).catch(() => [])
+    );
+    
+    const nestedResults = await Promise.all(searchPromises);
+    let candidates = nestedResults.flat();
+    
+    // Deduplicate
+    const seenIds = new Set<string>();
+    candidates = candidates.filter(v => {
+        if (seenIds.has(v.id)) return false;
+        seenIds.add(v.id);
+        return true;
+    });
+
+    // --- 3. STRICT FILTERING (Relevance Check) ---
+    // If we have history, only show videos that match keywords from history.
+    if (watchHistory.length > 0) {
+        // Build an allowlist of keywords from user history (Title + Channel Name)
+        // We take a large sample of recent history to build this profile
+        const historyKeywords = new Set<string>();
+        watchHistory.slice(0, 50).forEach(v => {
+            extractKeywords(v.title).forEach(k => historyKeywords.add(k));
+            extractKeywords(v.channelName).forEach(k => historyKeywords.add(k));
+        });
+        
+        // Add subscription names to allowlist
+        subscribedChannels.forEach(c => {
+            extractKeywords(c.name).forEach(k => historyKeywords.add(k));
+        });
+
+        // FILTER: Candidate must have at least one overlapping keyword with history
+        candidates = candidates.filter(candidate => {
+            const titleKeywords = extractKeywords(candidate.title);
+            const channelKeywords = extractKeywords(candidate.channelName);
+            
+            // Check intersection
+            const isRelevant = [...titleKeywords, ...channelKeywords].some(k => historyKeywords.has(k));
+            return isRelevant;
         });
     }
 
-    // Fetch all candidates
-    const nestedCandidates = await Promise.all(candidatePromises);
-    const rawCandidates = nestedCandidates.flat();
-
-    // Deduplication (Key Step)
-    const uniqueCandidates = Array.from(new Map(rawCandidates.map(v => [v.id, v])).values());
-    
-    // Remove videos already watched (Filtering)
-    const historyIds = new Set(watchHistory.map(v => v.id));
-    const candidates = uniqueCandidates.filter(v => !historyIds.has(v.id));
-
-    // --- PHASE 2: RANKING ---
-    // Goal: Score candidates by "Predicted Watch Time".
-    
-    const rankedVideos = rankVideos(candidates, userProfile, {
-        ngKeywords: sources.ngKeywords,
-        ngChannels: sources.ngChannels,
-        watchHistory: sources.watchHistory,
-        // If the user has no specific preference, we simulate a mix of discovery and comfort
-        mode: sources.preferredGenres.length > 0 ? 'discovery' : 'comfort'
+    // --- 4. NG FILTERING ---
+    candidates = candidates.filter(v => {
+        const fullText = `${v.title} ${v.channelName}`.toLowerCase();
+        if (ngKeywords.some(ng => fullText.includes(ng.toLowerCase()))) return false;
+        if (ngChannels.includes(v.channelId)) return false;
+        return true;
     });
 
-    // Shuffle the top ranked results to introduce variety and feel more random,
-    // while still being based on a high-quality candidate pool.
-    return shuffleArray(rankedVideos.slice(0, 50));
+    // --- 5. SHUFFLING ---
+    // Mix everything together so it's not clustered by topic
+    return shuffleArray(candidates);
 };
 
-// --- Legacy Engine (Fallback) ---
-
+// Legacy function kept for compatibility if needed, but UI uses getXraiRecommendations now
 export const getLegacyRecommendations = async (): Promise<Video[]> => {
     try {
         const { videos } = await getRecommendedVideos();
