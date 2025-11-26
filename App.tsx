@@ -18,7 +18,7 @@ import { AiProvider } from './contexts/AiContext';
 const { Routes, Route, useLocation } = ReactRouterDOM;
 
 const App: React.FC = () => {
-  const [theme, toggleTheme] = useTheme();
+  const { theme } = useTheme();
   const location = useLocation();
   const isPlayerPage = location.pathname.startsWith('/watch');
   const isShortsPage = location.pathname === '/shorts';
@@ -53,17 +53,17 @@ const App: React.FC = () => {
     return true;
   };
 
+  const appBgClass = theme.includes('glass') ? 'bg-transparent' : 'bg-yt-white dark:bg-yt-black';
+
   return (
     <AiProvider>
-        <div className="min-h-screen bg-yt-white dark:bg-yt-black overflow-x-hidden">
+        <div className={`min-h-screen ${appBgClass}`}>
         <Header 
             toggleSidebar={toggleSidebar} 
-            theme={theme}
-            toggleTheme={toggleTheme}
         />
         <div className="flex">
             {shouldShowSidebar() && <Sidebar isOpen={isSidebarOpen} />}
-            <main className={`flex-1 mt-14 ${mainContentMargin} ${mainContentPadding} transition-all duration-300 ease-in-out ml-0 overflow-x-hidden`}>
+            <main key={location.pathname} className={`flex-1 mt-14 ${mainContentMargin} ${mainContentPadding} transition-all duration-300 ease-in-out ml-0 overflow-x-hidden animate-fade-in-main`}>
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/watch/:videoId" element={<VideoPlayerPage />} />

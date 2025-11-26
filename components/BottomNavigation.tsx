@@ -1,17 +1,25 @@
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { HomeIcon, ShortsIcon, SubscriptionsIcon, YouIcon } from './icons/Icons';
+import { useTheme } from '../hooks/useTheme';
 
 const { NavLink } = ReactRouterDOM;
 
 const BottomNavigation: React.FC = () => {
+  const { theme } = useTheme();
+  
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `flex flex-col items-center justify-center w-full h-full space-y-1 ${
       isActive ? 'text-black dark:text-white' : 'text-black dark:text-white'
     }`;
+  
+  const bgClass = theme.includes('glass')
+    ? 'bg-yt-white/40 dark:bg-yt-black/40 backdrop-blur-xl'
+    : 'bg-yt-white dark:bg-yt-black';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-12 bg-yt-white dark:bg-yt-black border-t border-yt-spec-light-20 dark:border-yt-spec-20 flex items-center justify-around z-50 md:hidden">
+    <div className={`fixed bottom-0 left-0 right-0 h-12 ${bgClass} border-t border-yt-spec-light-20 dark:border-yt-spec-20 flex items-center justify-around z-50 md:hidden transition-colors duration-300`}>
       <NavLink to="/" className={navClass}>
         <HomeIcon />
         <span className="text-[10px]">ホーム</span>

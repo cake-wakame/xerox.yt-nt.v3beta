@@ -1,7 +1,9 @@
+
 import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { HomeIcon, ShortsIcon, SubscriptionsIcon, HistoryIcon, PlaylistIcon } from './icons/Icons';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import { useTheme } from '../hooks/useTheme';
 
 const { NavLink } = ReactRouterDOM;
 
@@ -36,10 +38,19 @@ const SmallSidebarItem: React.FC<{ icon: React.ReactNode; label: string; to: str
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const { subscribedChannels } = useSubscription();
+  const { theme } = useTheme();
+
+  const sidebarBgClass = theme.includes('glass') 
+    ? 'bg-yt-white/30 dark:bg-yt-black/30 backdrop-blur-xl' 
+    : 'bg-yt-white dark:bg-yt-black';
+
+  const smallSidebarBgClass = theme.includes('glass')
+    ? 'bg-yt-white/30 dark:bg-yt-black/30 backdrop-blur-xl'
+    : 'bg-yt-white dark:bg-yt-black';
 
   if (!isOpen) {
     return (
-        <div className="fixed top-14 left-0 w-[72px] h-full bg-yt-white dark:bg-yt-black flex-col items-center px-1 space-y-0 z-40 hidden md:flex">
+        <div className={`fixed top-14 left-0 w-[72px] h-full ${smallSidebarBgClass} flex-col items-center px-1 space-y-0 z-40 hidden md:flex transition-colors duration-300`}>
             <SmallSidebarItem to="/" icon={<HomeIcon />} label="ホーム" />
             <SmallSidebarItem to="/shorts" icon={<ShortsIcon />} label="ショート" />
             <SmallSidebarItem to="/subscriptions" icon={<SubscriptionsIcon />} label="登録チャンネル" />
@@ -49,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   }
 
   return (
-    <aside className="fixed top-14 left-0 w-60 h-full bg-yt-white dark:bg-yt-black pb-3 hover:overflow-y-auto overflow-y-hidden z-40 group hidden md:block">
+    <aside className={`fixed top-14 left-0 w-60 h-full ${sidebarBgClass} pb-3 hover:overflow-y-auto overflow-y-hidden z-40 group hidden md:block transition-colors duration-300`}>
       <nav className="flex flex-col space-y-0.5 py-3">
         <SidebarItem to="/" icon={<HomeIcon />} label="ホーム" />
         <SidebarItem to="/shorts" icon={<ShortsIcon />} label="ショート" />

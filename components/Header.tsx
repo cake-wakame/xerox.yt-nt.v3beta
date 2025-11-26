@@ -1,37 +1,32 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
-import { MenuIcon, YouTubeLogo, SearchIcon, BellIcon, LightbulbIcon, MoonIcon, SettingsIcon, SaveIcon, DownloadIcon, TrashIcon, HistoryIcon } from './icons/Icons';
-import { useNotification } from '../contexts/NotificationContext';
+import { MenuIcon, YouTubeLogo, SearchIcon, SettingsIcon, SaveIcon, DownloadIcon, TrashIcon, HistoryIcon, CheckIcon, SunIcon, MoonIcon, LightbulbIcon } from './icons/Icons';
 import { useSearchHistory } from '../contexts/SearchHistoryContext';
 import { usePreference } from '../contexts/PreferenceContext';
 import { useHistory } from '../contexts/HistoryContext';
-import NotificationDropdown from './NotificationDropdown';
 import HistoryDeletionModal from './HistoryDeletionModal';
 import SearchHistoryDeletionModal from './SearchHistoryDeletionModal';
+import { useTheme, type Theme } from '../hooks/useTheme';
 
 const { useNavigate, Link } = ReactRouterDOM;
 
 interface HeaderProps {
   toggleSidebar: () => void;
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) => {
+const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryDeletionModalOpen, setIsHistoryDeletionModalOpen] = useState(false);
   const [isSearchHistoryDeletionModalOpen, setIsSearchHistoryDeletionModalOpen] = useState(false);
   const [useProxy, setUseProxy] = useState(localStorage.getItem('useChannelHomeProxy') !== 'false');
 
-  const { notifications, unreadCount, markAsRead } = useNotification();
+  const { theme, setTheme } = useTheme();
   const { addSearchTerm, clearSearchHistory } = useSearchHistory();
   const { exportUserData, importUserData } = usePreference();
   const { clearHistory } = useHistory();
   const navigate = useNavigate();
-  const notificationRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,18 +37,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
       navigate(`/results?search_query=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
-
-  const handleBellClick = () => {
-    setIsNotificationOpen(prev => !prev);
-    setIsSettingsOpen(false);
-    if (!isNotificationOpen && unreadCount > 0) {
-        markAsRead();
-    }
-  };
   
   const handleSettingsClick = () => {
       setIsSettingsOpen(prev => !prev);
-      setIsNotificationOpen(false);
   };
 
   const toggleProxy = () => {
@@ -90,9 +76,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-        if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-            setIsNotificationOpen(false);
-        }
         if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
             setIsSettingsOpen(false);
         }
@@ -102,9 +85,26 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
         document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  const headerBgClass = theme.includes('glass')
+    ? 'bg-yt-white/40 dark:bg-yt-black/40 backdrop-blur-xl border-b border-white/10 dark:border-white/10'
+    : 'bg-yt-white dark:bg-yt-black border-b border-yt-spec-light-20 dark:border-yt-spec-20';
+
+  const ThemeSelectItem: React.FC<{ value: Theme, label: string, icon: React.ReactNode }> = ({ value, label, icon }) => (
+    <button
+        onClick={() => setTheme(value)}
+        className="w-full text-left flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white"
+    >
+        <div className="flex items-center gap-2">
+            {icon}
+            <span>{label}</span>
+        </div>
+        {theme === value && <CheckIcon />}
+    </button>
+  );
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-yt-white dark:bg-yt-black h-14 flex items-center justify-between px-4 z-50">
+    <header className={`fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50 transition-colors duration-300 ${headerBgClass}`}>
       {/* Left Section */}
       <div className="flex items-center space-x-4">
         <button onClick={toggleSidebar} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 active:scale-95 transform transition-transform duration-150 hidden md:block" aria-label="サイドバーの切り替え">
@@ -131,12 +131,12 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="検索"
-                className="w-full h-10 bg-transparent pl-10 sm:pl-4 pr-4 text-base text-black dark:text-white placeholder-yt-light-gray focus:outline-none dark:bg-[#121212]"
+                className="w-full h-10 bg-transparent pl-10 sm:pl-4 pr-4 text-base text-black dark:text-white placeholder-yt-light-gray focus:outline-none dark:bg-[#121212]/50"
                 />
             </div>
             <button
                 type="submit"
-                className="bg-yt-light dark:bg-[#222222] h-10 px-6 border-l border-yt-light-gray/20 dark:border-[#303030] hover:bg-stone-200 dark:hover:bg-[#2a2a2a] transition-colors w-16 flex items-center justify-center"
+                className="bg-yt-light/50 dark:bg-[#222222]/50 h-10 px-6 border-l border-yt-light-gray/20 dark:border-[#303030] hover:bg-stone-200 dark:hover:bg-[#2a2a2a] transition-colors w-16 flex items-center justify-center"
                 aria-label="検索"
             >
                 <SearchIcon />
@@ -147,21 +147,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
 
       {/* Right Section */}
       <div className="flex items-center space-x-0 sm:space-x-2 md:space-x-4">
-        <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 active:scale-95 transform transition-transform duration-150 hidden sm:block" aria-label="テーマの切り替え">
-          {theme === 'light' ? <MoonIcon /> : <LightbulbIcon />}
-        </button>
-        <div className="relative" ref={notificationRef}>
-            <button onClick={handleBellClick} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 active:scale-95 transform transition-transform duration-150" aria-label="通知">
-                <BellIcon />
-                 {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-yt-red rounded-full ring-2 ring-white dark:ring-yt-black">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                )}
-            </button>
-            {isNotificationOpen && <NotificationDropdown notifications={notifications} onClose={() => setIsNotificationOpen(false)} />}
-        </div>
-        
         <div className="relative" ref={settingsRef}>
             <button 
                 onClick={handleSettingsClick}
@@ -171,104 +156,101 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, theme, toggleTheme }) =>
                 <SettingsIcon />
             </button>
             
-            {isSettingsOpen && (
-                <div className="absolute top-12 right-0 w-72 bg-yt-white dark:bg-yt-light-black rounded-lg shadow-lg border border-yt-spec-light-20 dark:border-yt-spec-20 py-2 overflow-hidden z-50">
-                    <div className="py-2">
-                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">一般設定</div>
-                        <label className="flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 cursor-pointer">
-                            <span className="text-sm text-black dark:text-white">Proxy経由で取得</span>
-                            <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                <input 
-                                    type="checkbox" 
-                                    name="toggle" 
-                                    id="toggle" 
-                                    className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 right-5"
-                                    checked={useProxy}
-                                    onChange={toggleProxy}
-                                />
-                                <div className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useProxy ? 'bg-yt-blue' : 'bg-yt-light-gray'}`}></div>
-                            </div>
-                        </label>
+            <div className={`absolute top-12 right-0 w-72 bg-yt-white/80 dark:bg-yt-light-black/80 backdrop-blur-xl rounded-lg shadow-lg border border-yt-spec-light-20 dark:border-yt-spec-20 py-2 overflow-hidden z-50 transition-all duration-200 ease-out ${isSettingsOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+                <div className="py-2">
+                    <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">テーマ</div>
+                    <ThemeSelectItem value="light-glass" label="ライト (ガラス)" icon={<SunIcon />} />
+                    <ThemeSelectItem value="dark-glass" label="ダーク (ガラス)" icon={<MoonIcon />} />
+                    <ThemeSelectItem value="light" label="ライト (標準)" icon={<SunIcon />} />
+                    <ThemeSelectItem value="dark" label="ダーク (標準)" icon={<MoonIcon />} />
 
-                         <button 
-                            onClick={toggleTheme}
-                            className="w-full text-left flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 sm:hidden"
-                        >
-                            <span className="text-sm text-black dark:text-white">テーマ変更</span>
-                             {theme === 'light' ? <MoonIcon /> : <LightbulbIcon />}
-                        </button>
-
-                        <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
-
-                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">履歴管理</div>
-                        
-                        {/* Watch History */}
-                        <button 
-                            onClick={handleClearAllHistory}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <TrashIcon />
-                            全ての視聴履歴を削除
-                        </button>
-                        <button 
-                            onClick={() => { setIsHistoryDeletionModalOpen(true); setIsSettingsOpen(false); }}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <HistoryIcon />
-                            視聴履歴を選択して削除
-                        </button>
-
-                        <div className="my-1"></div>
-
-                        {/* Search History */}
-                        <button 
-                            onClick={handleClearAllSearchHistory}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <TrashIcon />
-                            全ての検索履歴を削除
-                        </button>
-                        <button 
-                            onClick={() => { setIsSearchHistoryDeletionModalOpen(true); setIsSettingsOpen(false); }}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <SearchIcon />
-                            検索履歴を選択して削除
-                        </button>
-
-                        <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
-                        
-                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">データのバックアップ (JSON)</div>
-                        
-                        <button 
-                            onClick={exportUserData}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <DownloadIcon />
-                            エクスポート (保存)
-                        </button>
-                        
-                        <button 
-                            onClick={handleImportClick}
-                            className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
-                        >
-                            <SaveIcon />
-                            インポート (復元)
-                        </button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept=".json" 
-                            onChange={handleFileChange} 
-                        />
-
-                        <div className="px-4 py-2 text-xs text-yt-light-gray mt-1">
-                            登録チャンネル、履歴、設定を含みます。
+                    <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
+                    <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">一般設定</div>
+                    <label className="flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 cursor-pointer">
+                        <span className="text-sm text-black dark:text-white">Proxy経由で取得</span>
+                        <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input 
+                                type="checkbox" 
+                                name="toggle" 
+                                id="toggle" 
+                                className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 right-5"
+                                checked={useProxy}
+                                onChange={toggleProxy}
+                            />
+                            <div className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useProxy ? 'bg-yt-blue' : 'bg-yt-light-gray'}`}></div>
                         </div>
+                    </label>
+
+                    <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
+
+                    <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">履歴管理</div>
+                    
+                    {/* Watch History */}
+                    <button 
+                        onClick={handleClearAllHistory}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <TrashIcon />
+                        全ての視聴履歴を削除
+                    </button>
+                    <button 
+                        onClick={() => { setIsHistoryDeletionModalOpen(true); setIsSettingsOpen(false); }}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <HistoryIcon />
+                        視聴履歴を選択して削除
+                    </button>
+
+                    <div className="my-1"></div>
+
+                    {/* Search History */}
+                    <button 
+                        onClick={handleClearAllSearchHistory}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <TrashIcon />
+                        全ての検索履歴を削除
+                    </button>
+                    <button 
+                        onClick={() => { setIsSearchHistoryDeletionModalOpen(true); setIsSettingsOpen(false); }}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <SearchIcon />
+                        検索履歴を選択して削除
+                    </button>
+
+                    <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
+                    
+                    <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">データのバックアップ (JSON)</div>
+                    
+                    <button 
+                        onClick={exportUserData}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <DownloadIcon />
+                        エクスポート (保存)
+                    </button>
+                    
+                    <button 
+                        onClick={handleImportClick}
+                        className="w-full text-left flex items-center px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white gap-2"
+                    >
+                        <SaveIcon />
+                        インポート (復元)
+                    </button>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept=".json" 
+                        onChange={handleFileChange} 
+                    />
+
+                    <div className="px-4 py-2 text-xs text-yt-light-gray mt-1">
+                        登録チャンネル、履歴、設定を含みます。
                     </div>
                 </div>
-            )}
+            </div>
         </div>
       </div>
       {isHistoryDeletionModalOpen && (

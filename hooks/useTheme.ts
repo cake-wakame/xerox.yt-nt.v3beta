@@ -1,32 +1,52 @@
-import { useState, useEffect, useCallback } from 'react';
 
-type Theme = 'light' | 'dark';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 
-export const useTheme = (): [Theme, () => void] => {
-  const [theme, setTheme] = useState<Theme>('dark');
+export type Theme = 'light' | 'dark' | 'light-glass' | 'dark-glass';
 
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const initialTheme = localStorage.getItem('theme') as Theme | null;
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
 
-    if (initialTheme) {
-      setTheme(initialTheme);
-    } else {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setTheme(systemTheme);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [theme, _setTheme] = useState<Theme>('light-glass');
+
+    const setTheme = useCallback((newTheme: Theme) => {
+        _setTheme(newTheme);
+        try {
+            localStorage.setItem('theme', newTheme);
+        } catch (e) {
+            console.error("Could not save theme to localStorage", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            const storedTheme = localStorage.getItem('theme') as Theme | null;
+            if (storedTheme && ['light', 'dark', 'light-glass', 'dark-glass'].includes(storedTheme)) {
+                _setTheme(storedTheme);
+            }
+        } catch (e) {
+            console.error("Could not read theme from localStorage", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        root.className = ''; // Clear all theme classes first
+        root.classList.add(theme);
+    }, [theme]);
+    
+    // FIX: Rewrote JSX to React.createElement to be valid in a .ts file, and added React import.
+    return React.createElement(ThemeContext.Provider, { value: { theme, setTheme } }, children);
+}
+
+export const useTheme = (): ThemeContextType => {
+    const context = useContext(ThemeContext);
+    if (!context) {
+        throw new Error('useTheme must be used within a ThemeProvider');
     }
-  }, []);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-  }, []);
-
-  return [theme, toggleTheme];
+    return context;
 };

@@ -44,8 +44,8 @@ const VideoCard: React.FC<VideoCardProps> = memo(({ video, hideChannelInfo = fal
   const hasCollaborators = video.collaborators && video.collaborators.length > 1;
   
   return (
-    <Link to={`/watch/${video.id}`} className="flex flex-col group cursor-pointer">
-      <div className="relative rounded-xl overflow-hidden aspect-video bg-yt-light dark:bg-yt-dark-gray">
+    <Link to={`/watch/${video.id}`} className="flex flex-col group cursor-pointer transition-transform duration-300 ease-in-out sm:hover:scale-[1.03] sm:hover:z-10">
+      <div className="relative rounded-xl overflow-hidden aspect-video bg-yt-light dark:bg-yt-dark-gray shadow-sm group-hover:shadow-xl transition-shadow duration-300">
         <img 
             src={video.thumbnailUrl} 
             alt={video.title} 

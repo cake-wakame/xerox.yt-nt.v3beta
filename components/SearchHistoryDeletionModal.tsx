@@ -42,8 +42,8 @@ const SearchHistoryDeletionModal: React.FC<SearchHistoryDeletionModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-            <div className="bg-yt-white dark:bg-yt-light-black w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={onClose}>
+            <div className="bg-yt-white/90 dark:bg-yt-light-black/80 backdrop-blur-lg w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh] border border-yt-spec-light-20 dark:border-yt-spec-20" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-black dark:text-white">検索履歴の管理</h2>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10">
@@ -51,7 +51,7 @@ const SearchHistoryDeletionModal: React.FC<SearchHistoryDeletionModalProps> = ({
                     </button>
                 </div>
                 
-                <div className="p-2 border-b border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-between items-center bg-yt-light dark:bg-yt-black">
+                <div className="p-2 border-b border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-between items-center bg-yt-light/50 dark:bg-yt-black/50">
                     <button 
                         onClick={handleSelectAll}
                         className="text-sm font-semibold text-yt-blue px-4 py-2 rounded hover:bg-yt-blue/10"

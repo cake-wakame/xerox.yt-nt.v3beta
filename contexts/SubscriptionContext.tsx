@@ -11,35 +11,21 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-// Hardcoded default channel that cannot be unsubscribed
-const FORCED_SUBSCRIPTION_CHANNEL: Channel = {
-    id: 'UCCMV3NfZk_NB-MmUvHj6aFw', // This is AZKi's Channel ID
-    name: 'Xerox',
-    avatarUrl: 'https://pbs.twimg.com/profile_images/1853733227271532544/FgMEnR7d_400x400.jpg',
-    subscriberCount: '' // This can be empty as it's not used in the subscription list itself
-};
-
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [subscribedChannels, setSubscribedChannels] = useState<Channel[]>(() => {
     try {
       const item = window.localStorage.getItem('subscribedChannels');
-      const existingChannels = item ? JSON.parse(item) : [];
-      // Ensure the default channel is always present and at the top
-      const hasForcedChannel = existingChannels.some((c: Channel) => c.id === FORCED_SUBSCRIPTION_CHANNEL.id);
-      if (!hasForcedChannel) {
-        return [FORCED_SUBSCRIPTION_CHANNEL, ...existingChannels];
-      }
-      return [FORCED_SUBSCRIPTION_CHANNEL, ...existingChannels.filter((c: Channel) => c.id !== FORCED_SUBSCRIPTION_CHANNEL.id)];
-
+      return item ? JSON.parse(item) : [];
     } catch (error) {
       console.error(error);
-      return [FORCED_SUBSCRIPTION_CHANNEL];
+      return [];
     }
   });
 
   useEffect(() => {
     try {
       window.localStorage.setItem('subscribedChannels', JSON.stringify(subscribedChannels));
+    // FIX: Added curly braces to the catch block to fix a syntax error.
     } catch (error) {
       console.error(error);
     }
@@ -55,10 +41,6 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   const unsubscribe = (channelId: string) => {
-    if (channelId === FORCED_SUBSCRIPTION_CHANNEL.id) {
-        alert("このチャンネルは登録解除できません。");
-        return;
-    }
     setSubscribedChannels(prev => prev.filter(c => c.id !== channelId));
   };
 

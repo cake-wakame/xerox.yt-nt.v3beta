@@ -42,11 +42,8 @@
     <link rel="shortcut icon" href="https://www.youtube.com/s/desktop/03dd36f0/img/favicon.ico" type="image/x-icon">
     <script>
       // Prevent FOUC by applying theme from localStorage before React loads
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      const theme = localStorage.getItem('theme') || 'light-glass';
+      document.documentElement.className = theme;
     </script>
   <script type="importmap">
 {
@@ -71,7 +68,7 @@
 }
 </script>
 </head>
-  <body class="bg-yt-white dark:bg-yt-black text-black dark:text-yt-white font-sans">
+  <body class="text-black dark:text-yt-white font-sans transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

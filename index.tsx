@@ -4,10 +4,10 @@ import * as ReactRouterDOM from 'react-router-dom';
 import App from './App';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { PlaylistProvider } from './contexts/PlaylistContext';
-import { NotificationProvider } from './contexts/NotificationContext';
 import { SearchHistoryProvider } from './contexts/SearchHistoryContext';
 import { HistoryProvider } from './contexts/HistoryContext';
 import { PreferenceProvider } from './contexts/PreferenceContext';
+import { ThemeProvider } from './hooks/useTheme';
 
 const { BrowserRouter } = ReactRouterDOM;
 
@@ -20,9 +20,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <SubscriptionProvider>
-        <PlaylistProvider>
-          <NotificationProvider>
+      <ThemeProvider>
+        <SubscriptionProvider>
+          <PlaylistProvider>
             <SearchHistoryProvider>
               <HistoryProvider>
                 <PreferenceProvider>
@@ -30,9 +30,9 @@ root.render(
                 </PreferenceProvider>
               </HistoryProvider>
             </SearchHistoryProvider>
-          </NotificationProvider>
-        </PlaylistProvider>
-      </SubscriptionProvider>
+          </PlaylistProvider>
+        </SubscriptionProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

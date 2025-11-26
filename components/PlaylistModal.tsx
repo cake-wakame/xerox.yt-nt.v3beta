@@ -38,16 +38,16 @@ const PlaylistModal: React.FC<PlaylistModalProps> = ({ isOpen, onClose, video })
 
     return (
         <div 
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
             onClick={onClose}
         >
             <div 
-                className="bg-yt-light-black w-full max-w-sm rounded-lg shadow-lg p-4 flex flex-col"
+                className="bg-yt-light/80 dark:bg-yt-light-black/80 backdrop-blur-lg w-full max-w-sm rounded-lg shadow-lg p-4 flex flex-col border border-yt-spec-light-20 dark:border-yt-spec-20"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">再生リストに保存...</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-20">
+                    <h2 className="text-lg font-semibold text-black dark:text-white">再生リストに保存...</h2>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-20">
                         <CloseIcon />
                     </button>
                 </div>
@@ -55,14 +55,14 @@ const PlaylistModal: React.FC<PlaylistModalProps> = ({ isOpen, onClose, video })
                 <div className="max-h-60 overflow-y-auto mb-4">
                     {playlists.length > 0 ? (
                         playlists.map(playlist => (
-                            <label key={playlist.id} className="flex items-center p-2 rounded-md hover:bg-yt-spec-10 cursor-pointer">
+                            <label key={playlist.id} className="flex items-center p-2 rounded-md hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 cursor-pointer">
                                 <input 
                                     type="checkbox"
                                     className="w-5 h-5 accent-yt-blue bg-transparent"
                                     checked={playlistsWithVideo.includes(playlist.id)}
                                     onChange={e => handlePlaylistToggle(playlist.id, e.target.checked)}
                                 />
-                                <span className="ml-4">{playlist.name}</span>
+                                <span className="ml-4 text-black dark:text-white">{playlist.name}</span>
                             </label>
                         ))
                     ) : (
@@ -70,7 +70,7 @@ const PlaylistModal: React.FC<PlaylistModalProps> = ({ isOpen, onClose, video })
                     )}
                 </div>
                 
-                <div className="border-t border-yt-spec-20 pt-4">
+                <div className="border-t border-yt-spec-light-20 dark:border-yt-spec-20 pt-4">
                     {showNewPlaylistInput ? (
                         <div>
                             <input
@@ -78,7 +78,7 @@ const PlaylistModal: React.FC<PlaylistModalProps> = ({ isOpen, onClose, video })
                                 value={newPlaylistName}
                                 onChange={(e) => setNewPlaylistName(e.target.value)}
                                 placeholder="新しい再生リストのタイトル"
-                                className="w-full bg-transparent border-b-2 border-yt-gray focus:border-white outline-none px-1 py-1 mb-2"
+                                className="w-full bg-transparent border-b-2 border-yt-gray focus:border-black dark:focus:border-white outline-none px-1 py-1 mb-2 text-black dark:text-white"
                                 autoFocus
                             />
                             <div className="text-right">
@@ -94,10 +94,10 @@ const PlaylistModal: React.FC<PlaylistModalProps> = ({ isOpen, onClose, video })
                     ) : (
                         <button 
                             onClick={() => setShowNewPlaylistInput(true)} 
-                            className="flex items-center p-2 rounded-md hover:bg-yt-spec-10 w-full"
+                            className="flex items-center p-2 rounded-md hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 w-full"
                         >
                             <PlaylistIcon />
-                            <span className="ml-4">新しい再生リストを作成</span>
+                            <span className="ml-4 text-black dark:text-white">新しい再生リストを作成</span>
                         </button>
                     )}
                 </div>

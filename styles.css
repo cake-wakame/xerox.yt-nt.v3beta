@@ -1,3 +1,49 @@
+/* Theme-dependent Body Backgrounds */
+html.light body { background-color: hsl(0, 0%, 100%); }
+html.dark body { background-color: hsl(0, 0%, 6%); }
+
+/* iOS 26 Concept Style - Light Glass (Pastel Mesh) */
+html.light-glass body {
+    background-color: #f0f2f5;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, transparent 50%);
+    background: 
+        fixed radial-gradient(circle at 15% 50%, rgba(255, 230, 230, 0.8), transparent 50%),
+        fixed radial-gradient(circle at 85% 30%, rgba(230, 230, 255, 0.8), transparent 50%),
+        fixed radial-gradient(circle at 50% 80%, rgba(240, 255, 240, 0.8), transparent 50%),
+        fixed linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    background-size: 200% 200%;
+    animation: gradientAnimation 20s ease infinite;
+}
+
+/* iOS 26 Concept Style - Dark Glass (Deep Space Mesh) */
+html.dark-glass body {
+    background-color: #000000;
+    background: 
+        fixed radial-gradient(circle at 20% 20%, rgba(60, 20, 100, 0.6), transparent 60%),
+        fixed radial-gradient(circle at 80% 80%, rgba(20, 60, 100, 0.6), transparent 60%),
+        fixed radial-gradient(circle at 50% 50%, rgba(20, 20, 40, 0.8), transparent),
+        fixed linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+    background-size: 150% 150%;
+}
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Page transition animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-main {
+  animation: fadeIn 0.35s ease-out forwards;
+}
+
 /* For Webkit-based browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 8px;
@@ -16,7 +62,7 @@
 /* Show scrollbar thumb on hover over the body or any scrollable element */
 body:hover::-webkit-scrollbar-thumb,
 div:hover::-webkit-scrollbar-thumb {
-  background-color: #555; /* Dark theme scrollbar thumb */
+  background-color: rgba(85, 85, 85, 0.5); /* Semi-transparent thumb for glass feel */
 }
 
 html.light body:hover::-webkit-scrollbar-thumb,
@@ -32,7 +78,7 @@ html.light div:hover::-webkit-scrollbar-thumb {
 /* For Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #555 transparent; /* thumb color track color */
+  scrollbar-color: rgba(85, 85, 85, 0.5) transparent;
 }
 
 html.light * {
