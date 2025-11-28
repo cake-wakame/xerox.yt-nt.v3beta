@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const { theme } = useTheme();
   const location = useLocation();
   const isPlayerPage = location.pathname.startsWith('/watch');
-  const isShortsPage = location.pathname === '/shorts';
+  const isShortsPage = location.pathname.startsWith('/shorts');
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(!isPlayerPage);
   const [isHistoryDeletionModalOpen, setIsHistoryDeletionModalOpen] = useState(false);
@@ -89,6 +89,7 @@ const App: React.FC = () => {
                 <Route path="/you" element={<YouPage />} />
                 <Route path="/playlist/:playlistId" element={<PlaylistPage />} />
                 <Route path="/shorts" element={<ShortsPage />} />
+                <Route path="/shorts/:videoId" element={<ShortsPage />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/history" element={<HistoryPage />} />
                 <Route path="/management" element={<ManagementPage />} /> {/* Add new route */}

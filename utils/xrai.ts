@@ -50,7 +50,7 @@ export const extractKeywords = (text: string): string[] => {
   })));
 };
 
-const calculateMagnitude = (vector: Map<string, number>): number => {
+export const calculateMagnitude = (vector: Map<string, number>): number => {
     let sumSq = 0;
     for (const val of vector.values()) sumSq += val * val;
     return Math.sqrt(sumSq);

@@ -67,7 +67,7 @@ const ShortsShelf: React.FC<ShortsShelfProps> = ({ shorts, isLoading }) => {
     <section>
       <div className="flex items-center mb-4">
         <ShortsIcon />
-        <h2 className="text-2xl font-bold ml-3">ショート</h2>
+        <h2 className="text-2xl font-bold ml-3 text-black dark:text-white">ショート</h2>
       </div>
       <div className="relative group">
         <div className="overflow-hidden">
@@ -78,7 +78,7 @@ const ShortsShelf: React.FC<ShortsShelfProps> = ({ shorts, isLoading }) => {
               {isLoading ? (
                 Array.from({ length: 10 }).map((_, index) => <ShortsCardSkeleton key={index} />)
               ) : (
-                shorts.map(video => <ShortsCard key={video.id} video={video} />)
+                shorts.map(video => <ShortsCard key={video.id} video={video} context={{ type: 'home' }} />)
               )}
             </div>
         </div>

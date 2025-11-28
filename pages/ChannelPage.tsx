@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // FIX: Use named imports for react-router-dom components and hooks.
 import { useParams, Link } from 'react-router-dom';
-import { getChannelDetails, getChannelVideos, getChannelHome, mapHomeVideoToVideo, getPlayerConfig, getChannelShorts, getChannelPlaylists } from '../utils/api';
-import type { ChannelDetails, Video, Channel, ChannelHomeData, ApiPlaylist } from '../types';
+import { getChannelDetails, getChannelVideos, getChannelHome, mapHomeVideoToVideo, getPlayerConfig, getChannelShorts } from '../utils/api';
+import type { ChannelDetails, Video, Channel, ChannelHomeData } from '../types';
 import VideoGrid from '../components/VideoGrid';
 import VideoCard from '../components/VideoCard';
 import ShortsCard from '../components/ShortsCard';
-import SearchPlaylistResultCard from '../components/SearchPlaylistResultCard';
-import VideoCardSkeleton from '../components/icons/VideoCardSkeleton';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { usePreference } from '../contexts/PreferenceContext';
 import HorizontalScrollContainer from '../components/HorizontalScrollContainer';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { BlockIcon } from '../components/icons/Icons';
 
-type Tab = 'home' | 'videos' | 'shorts' | 'playlists';
+type Tab = 'home' | 'videos' | 'shorts';
 
 const ChannelPage: React.FC = () => {
     const { channelId } = useParams<{ channelId: string }>();
@@ -26,7 +24,6 @@ const ChannelPage: React.FC = () => {
     const [homeData, setHomeData] = useState<ChannelHomeData | null>(null);
     const [videos, setVideos] = useState<Video[]>([]);
     const [shorts, setShorts] = useState<Video[]>([]);
-    const [playlists, setPlaylists] = useState<ApiPlaylist[]>([]);
     
     const [videosPageToken, setVideosPageToken] = useState<string | undefined>('1');
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -43,7 +40,6 @@ const ChannelPage: React.FC = () => {
             setError(null);
             setVideos([]);
             setShorts([]);
-            setPlaylists([]);
             setHomeData(null);
             setVideosPageToken('1');
             setActiveTab('home');
@@ -105,12 +101,6 @@ const ChannelPage: React.FC = () => {
                         setShorts(enrichedShorts);
                     }
                     break;
-                case 'playlists':
-                    if (playlists.length === 0) {
-                        const pData = await getChannelPlaylists(channelId);
-                        setPlaylists(pData.playlists);
-                    }
-                    break;
             }
         } catch (err: any) {
             console.error(`Failed to load ${tab}`, err);
@@ -131,7 +121,7 @@ const ChannelPage: React.FC = () => {
             setIsTabLoading(false);
             setIsFetchingMore(false);
         }
-    }, [channelId, isFetchingMore, homeData, channelDetails, shorts.length, playlists.length]);
+    }, [channelId, isFetchingMore, homeData, channelDetails, shorts.length]);
     
     useEffect(() => {
         if (channelId && !isLoading) {
@@ -141,11 +131,9 @@ const ChannelPage: React.FC = () => {
                 fetchTabData('videos', '1');
             } else if (activeTab === 'shorts' && shorts.length === 0) {
                 fetchTabData('shorts');
-            } else if (activeTab === 'playlists' && playlists.length === 0) {
-                fetchTabData('playlists');
             }
         }
-    }, [activeTab, channelId, isLoading, fetchTabData, videos.length, homeData, shorts.length, playlists.length]);
+    }, [activeTab, channelId, isLoading, fetchTabData, videos.length, homeData, shorts.length]);
 
     const handleLoadMore = useCallback(() => {
         if (activeTab === 'videos' && videosPageToken && !isFetchingMore) {
@@ -219,7 +207,7 @@ const ChannelPage: React.FC = () => {
             <div className="flex flex-col gap-6 pb-10">
                 {homeData.topVideo && (
                     <div className="flex flex-col md:flex-row gap-4 md:gap-6 border-b border-yt-spec-light-20 dark:border-yt-spec-20 pb-6">
-                         <div className="w-full md:w-[360px] lg:w-[420px] aspect-video rounded-xl overflow-hidden flex-shrink-0 bg-yt-black">
+                         <div className="w-full md:w-[360px] lg:w-[420px] aspect-video rounded-xl overflow-hidden flex-shrink-0 bg-yt-black shadow-lg">
                             {playerParams ? (
                                 <iframe 
                                     src={`https://www.youtubeeducation.com/embed/${homeData.topVideo.videoId}${playerParams}`}
@@ -237,12 +225,12 @@ const ChannelPage: React.FC = () => {
                         </div>
                         <div className="flex-1 py-1 md:py-2 min-w-0">
                             <Link to={`/watch/${homeData.topVideo.videoId}`}>
-                                <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2 line-clamp-2">{homeData.topVideo.title}</h3>
+                                <h3 className="text-base md:text-xl font-bold mb-1 md:mb-2 line-clamp-2 leading-snug">{homeData.topVideo.title}</h3>
                             </Link>
                             
                             <div className="flex items-center mb-2">
                                 {channelDetails && (
-                                    <Link to={`/channel/${channelDetails.id}`} className="text-black dark:text-white font-semibold hover:text-yt-icon text-sm">
+                                    <Link to={`/channel/${channelDetails.id}`} className="text-black dark:text-white font-semibold hover:text-yt-icon text-sm md:text-base">
                                         {channelDetails.name}
                                     </Link>
                                 )}
@@ -254,7 +242,7 @@ const ChannelPage: React.FC = () => {
                                 <span>{homeData.topVideo.published}</span>
                             </div>
                             
-                            <p className="text-xs md:text-sm text-yt-light-gray line-clamp-3 md:line-clamp-4 whitespace-pre-line">
+                            <p className="text-sm text-yt-light-gray line-clamp-3 md:line-clamp-4 whitespace-pre-line hidden md:block">
                                 {homeData.topVideo.description?.replace(/<br\s*\/?>/gi, '\n')}
                             </p>
                         </div>
@@ -272,11 +260,11 @@ const ChannelPage: React.FC = () => {
                     .map((playlist, index) => (
                     <div key={`${playlist.playlistId}-${index}`}>
                         <div className="flex items-center justify-between mb-2 md:mb-4">
-                            <h3 className="text-base md:text-lg font-bold">{playlist.title}</h3>
+                            <h3 className="text-lg md:text-xl font-bold">{playlist.title}</h3>
                         </div>
                         <HorizontalScrollContainer>
                             {playlist.items.map(video => (
-                                <div key={video.videoId} className="w-40 md:w-48 flex-shrink-0">
+                                <div key={video.videoId} className="w-44 md:w-56 flex-shrink-0">
                                     <VideoCard video={mapHomeVideoToVideo(video, channelDetails)} hideChannelInfo />
                                 </div>
                             ))}
@@ -291,27 +279,31 @@ const ChannelPage: React.FC = () => {
     return (
         <div className="max-w-[1750px] mx-auto px-4 sm:px-6">
             {channelDetails.bannerUrl && (
-                <div className="w-full aspect-[6/1] md:aspect-[6/1.2] lg:aspect-[6.2/1] rounded-xl overflow-hidden mb-6">
+                <div className="w-full aspect-[6/1] md:aspect-[6/1.2] lg:aspect-[6.2/1] rounded-xl overflow-hidden mb-6 shadow-md">
                     <img src={channelDetails.bannerUrl} alt="Channel Banner" className="w-full h-full object-cover" />
                 </div>
             )}
 
             <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-4 md:mb-6">
                 <div className="flex-shrink-0">
-                    <img src={channelDetails.avatarUrl} alt={channelDetails.name} className="w-16 h-16 md:w-32 md:h-32 rounded-full object-cover" />
+                    <img src={channelDetails.avatarUrl} alt={channelDetails.name} className="w-20 h-20 md:w-32 md:h-32 rounded-full object-cover border border-yt-spec-light-20 dark:border-yt-spec-20 shadow-lg" />
                 </div>
                 <div className="flex-1 text-center md:text-left min-w-0">
-                    <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{channelDetails.name}</h1>
-                    <div className="text-yt-light-gray text-sm mb-3 flex flex-wrap justify-center md:justify-start gap-x-2">
+                    <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2 tracking-tight">{channelDetails.name}</h1>
+                    <div className="text-yt-light-gray text-sm md:text-base mb-3 flex flex-wrap justify-center md:justify-start gap-x-2">
                          <span>{channelDetails.handle}</span>
+                         <span>•</span>
+                         <span>登録者数 {channelDetails.subscriberCount}</span>
+                         <span>•</span>
+                         <span>動画 {channelDetails.videoCount} 本</span>
                     </div>
-                    <p className="text-yt-light-gray text-sm line-clamp-1 mb-3 max-w-2xl cursor-pointer mx-auto md:mx-0" onClick={() => alert(channelDetails.description)}>
+                    <p className="text-yt-light-gray text-sm line-clamp-1 mb-4 max-w-2xl cursor-pointer mx-auto md:mx-0" onClick={() => alert(channelDetails.description)}>
                         {channelDetails.description}
                     </p>
                     <div className="flex items-center justify-center md:justify-start gap-3">
                         <button 
                             onClick={handleSubscriptionToggle} 
-                            className={`px-4 md:px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                            className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${
                                 subscribed 
                                 ? 'bg-yt-light dark:bg-[#272727] text-black dark:text-white hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]' 
                                 : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
@@ -335,7 +327,6 @@ const ChannelPage: React.FC = () => {
                 <TabButton tab="home" label="ホーム" />
                 <TabButton tab="videos" label="動画" />
                 <TabButton tab="shorts" label="ショート" />
-                <TabButton tab="playlists" label="再生リスト" />
             </div>
 
             {activeTab === 'home' && renderHomeTab()}
@@ -351,43 +342,23 @@ const ChannelPage: React.FC = () => {
             {activeTab === 'shorts' && (
                 <div>
                     {isTabLoading && shorts.length === 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
                             {Array.from({ length: 12 }).map((_, index) => (
                                 <div key={index} className="w-full aspect-[9/16] rounded-xl bg-yt-light dark:bg-yt-dark-gray animate-pulse"></div>
                             ))}
                         </div>
                     ) : shorts.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
                             {shorts.map(short => (
-                                <ShortsCard key={short.id} video={short} />
+                                <ShortsCard 
+                                    key={short.id} 
+                                    video={short} 
+                                    context={{ type: 'channel', channelId: channelDetails.id }} 
+                                />
                             ))}
                         </div>
                     ) : (
                         <div className="text-center p-8 text-yt-light-gray">このチャンネルにはショート動画がありません。</div>
-                    )}
-                </div>
-            )}
-
-            {activeTab === 'playlists' && (
-                <div>
-                    {isTabLoading && playlists.length === 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8">
-                            {Array.from({ length: 10 }).map((_, index) => (
-                                <div key={index} className="flex flex-col gap-2 animate-pulse">
-                                  <div className="w-full aspect-video bg-yt-light dark:bg-yt-dark-gray rounded-xl"></div>
-                                  <div className="h-4 bg-yt-light dark:bg-yt-dark-gray rounded w-3/4"></div>
-                                  <div className="h-3 bg-yt-light dark:bg-yt-dark-gray rounded w-1/2"></div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : playlists.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8">
-                            {playlists.map(playlist => (
-                                <SearchPlaylistResultCard key={playlist.id} playlist={playlist} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center p-8 text-yt-light-gray">このチャンネルには再生リストがありません。</div>
                     )}
                 </div>
             )}

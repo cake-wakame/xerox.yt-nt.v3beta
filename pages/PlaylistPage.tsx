@@ -5,11 +5,13 @@ import { usePlaylist } from '../contexts/PlaylistContext';
 import { getVideosByIds } from '../utils/api';
 import type { Video } from '../types';
 import { EditIcon, TrashIcon, PlayIcon, ShuffleIcon, RepeatIcon, DragHandleIcon, MoreIconHorizontal, CheckIcon } from '../components/icons/Icons';
+import { useTheme } from '../hooks/useTheme';
 
 const PlaylistPage: React.FC = () => {
     const { playlistId } = useParams<{ playlistId: string }>();
     const navigate = useNavigate();
     const { playlists, renamePlaylist, removeVideoFromPlaylist, deletePlaylist, reorderVideosInPlaylist } = usePlaylist();
+    const { theme } = useTheme();
     
     const playlist = useMemo(() => playlists.find(p => p.id === playlistId), [playlists, playlistId]);
     
@@ -72,8 +74,11 @@ const PlaylistPage: React.FC = () => {
     const firstVideoId = videos.length > 0 ? videos[0].id : null;
     const coverImage = videos.length > 0 ? videos[0].thumbnailUrl : '';
 
+    const isGlassTheme = theme.includes('glass');
+    const panelBgClass = isGlassTheme ? 'glass-panel text-black dark:text-white' : 'bg-white/20 dark:bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl text-black dark:text-white';
+
     return (
-        <div className="min-h-screen bg-yt-white dark:bg-yt-black text-black dark:text-white">
+        <div className={`min-h-screen ${isGlassTheme ? '' : 'bg-yt-white dark:bg-yt-black'} text-black dark:text-white transition-colors duration-300`}>
             {/* Background Gradient Blur */}
             {coverImage && (
                 <div 
@@ -91,7 +96,7 @@ const PlaylistPage: React.FC = () => {
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 p-6 max-w-[1600px] mx-auto">
                 {/* Left Sidebar (Info) */}
                 <div className="lg:w-[360px] flex-shrink-0">
-                    <div className="lg:sticky lg:top-24 flex flex-col gap-6 p-6 rounded-3xl bg-white/20 dark:bg-black/40 backdrop-blur-md border border-white/10 shadow-2xl text-black dark:text-white">
+                    <div className={`lg:sticky lg:top-24 flex flex-col gap-6 p-6 rounded-3xl ${panelBgClass}`}>
                         {/* Cover Image */}
                         <div className="relative group aspect-video md:aspect-square rounded-xl overflow-hidden shadow-lg bg-yt-dark-gray">
                             {coverImage ? (
