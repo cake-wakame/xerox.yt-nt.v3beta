@@ -1,9 +1,8 @@
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import type { ApiPlaylist } from '../types';
 import { PlaylistIcon } from './icons/Icons';
-
-const { Link } = ReactRouterDOM;
 
 interface SearchPlaylistResultCardProps {
   playlist: ApiPlaylist;

@@ -1,8 +1,7 @@
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import type { Notification } from '../types';
-
-const { Link } = ReactRouterDOM;
 
 interface NotificationItemProps {
   notification: Notification;

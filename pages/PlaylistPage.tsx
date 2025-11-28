@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named imports for react-router-dom components and hooks.
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePlaylist } from '../contexts/PlaylistContext';
 import { getVideosByIds } from '../utils/api';
 import type { Video } from '../types';
 import { EditIcon, TrashIcon, PlayIcon, ShuffleIcon, RepeatIcon, DragHandleIcon, MoreIconHorizontal, CheckIcon } from '../components/icons/Icons';
-
-const { useParams, useNavigate, Link } = ReactRouterDOM;
 
 const PlaylistPage: React.FC = () => {
     const { playlistId } = useParams<{ playlistId: string }>();

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { getChannelVideos } from '../utils/api';
 import type { Video } from '../types';
 import VideoGrid from '../components/VideoGrid';
 import VideoCardSkeleton from '../components/icons/VideoCardSkeleton';
-
-const { Link } = ReactRouterDOM;
 
 // Parse "1 hour ago", "1 day ago" etc to comparable value
 const parseRelativeTime = (timeStr: string): number => {

@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import type { Video } from '../types';
 import { ChevronRightIcon, MoreIconHorizontal, BlockIcon, TrashIcon } from './icons/Icons';
 import { usePreference } from '../contexts/PreferenceContext';
-
-const { Link } = ReactRouterDOM;
 
 interface VideoCardProps {
   video: Video;

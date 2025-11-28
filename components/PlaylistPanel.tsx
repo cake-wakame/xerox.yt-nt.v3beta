@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named imports for react-router-dom components and hooks.
+import { Link, useSearchParams } from 'react-router-dom';
 import type { Playlist, Video } from '../types';
 import { ShuffleIcon, RepeatIcon, DragHandleIcon } from './icons/Icons';
-
-const { Link, useSearchParams } = ReactRouterDOM;
 
 interface PlaylistPanelProps {
   playlist: Playlist;

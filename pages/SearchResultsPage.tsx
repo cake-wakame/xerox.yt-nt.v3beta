@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for useSearchParams from react-router-dom
+import { useSearchParams } from 'react-router-dom';
 import { searchVideos, parseDuration } from '../utils/api';
 import type { Video, Channel, ApiPlaylist } from '../types';
 import SearchVideoResultCard from '../components/SearchVideoResultCard';
@@ -8,8 +9,6 @@ import SearchPlaylistResultCard from '../components/SearchPlaylistResultCard';
 import ShortsShelf from '../components/ShortsShelf';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { usePreference } from '../contexts/PreferenceContext';
-
-const { useSearchParams } = ReactRouterDOM;
 
 const SearchResultsPage: React.FC = () => {
     const [searchParams] = useSearchParams();

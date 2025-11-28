@@ -11,8 +11,8 @@ import { LikeIcon, CommentIcon, CloseIcon, BlockIcon, TrashIcon, RepeatIcon } fr
 import CommentComponent from '../components/Comment';
 import { useTheme } from '../hooks/useTheme';
 
-const ChevronUpIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 24 24" width="32" className="fill-current text-black dark:text-white"><path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg> );
-const ChevronDownIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 24 24" width="32" className="fill-current text-black dark:text-white"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg> );
+const ChevronUpIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 0 24 24" width="48" className="fill-current text-black dark:text-white"><path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg> );
+const ChevronDownIcon = () => ( <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 0 24 24" width="48" className="fill-current text-black dark:text-white"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg> );
 
 const ShortsPage: React.FC = () => {
     const [videos, setVideos] = useState<Video[]>([]);
@@ -225,9 +225,9 @@ const ShortsPage: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className="flex flex-col gap-4 mt-auto">
-                        <button onClick={handlePrev} disabled={currentIndex === 0} className={`p-3 rounded-full bg-yt-light/50 dark:bg-yt-light-black/50 hover:bg-yt-light dark:hover:bg-yt-light-black backdrop-blur-sm transition-all ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}><ChevronUpIcon /></button>
-                        <button onClick={handleNext} disabled={currentIndex >= videos.length - 1 && !isFetchingMore} className={`p-3 rounded-full bg-yt-light/50 dark:bg-yt-light-black/50 hover:bg-yt-light dark:hover:bg-yt-light-black backdrop-blur-sm transition-all ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-30 cursor-not-allowed' : ''}`}><ChevronDownIcon /></button>
+                    <div className="flex flex-col gap-6 mt-auto">
+                        <button onClick={handlePrev} disabled={currentIndex === 0} className={`p-4 rounded-full bg-yt-light/50 dark:bg-yt-light-black/50 hover:bg-yt-light dark:hover:bg-yt-light-black backdrop-blur-sm transition-all ${currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}><ChevronUpIcon /></button>
+                        <button onClick={handleNext} disabled={currentIndex >= videos.length - 1 && !isFetchingMore} className={`p-4 rounded-full bg-yt-light/50 dark:bg-yt-light-black/50 hover:bg-yt-light dark:hover:bg-yt-light-black backdrop-blur-sm transition-all ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-30 cursor-not-allowed' : ''}`}><ChevronDownIcon /></button>
                     </div>
                 </div>
 

@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import type { Video } from '../types';
 import { ChevronRightIcon } from './icons/Icons';
-
-const { Link } = ReactRouterDOM;
 
 interface SearchVideoResultCardProps {
   video: Video;

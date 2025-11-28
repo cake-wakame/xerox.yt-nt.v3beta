@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named imports for react-router-dom components and hooks.
+import { useNavigate, Link } from 'react-router-dom';
 import { MenuIcon, YouTubeLogo, SearchIcon, SettingsIcon, SaveIcon, DownloadIcon, TrashIcon, HistoryIcon, CheckIcon, SunIcon, MoonIcon, LightbulbIcon } from './icons/Icons';
 import { useSearchHistory } from '../contexts/SearchHistoryContext';
 import { usePreference } from '../contexts/PreferenceContext';
 import { useHistory } from '../contexts/HistoryContext';
 import { useTheme, type Theme } from '../hooks/useTheme';
-
-const { useNavigate, Link } = ReactRouterDOM;
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -69,6 +68,17 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
           clearSearchHistory();
           alert('検索履歴を削除しました。');
       }
+  };
+
+  const handleResetUserData = () => {
+    if (window.confirm('警告: すべてのユーザーデータ（登録チャンネル、履歴、設定など）がリセットされます。この操作は元に戻せません。よろしいですか？')) {
+        const currentTheme = localStorage.getItem('theme');
+        localStorage.clear();
+        if (currentTheme) {
+            localStorage.setItem('theme', currentTheme);
+        }
+        window.location.reload();
+    }
   };
 
   useEffect(() => {
@@ -261,6 +271,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
                         <div className="px-4 py-2 text-xs text-yt-light-gray mt-1">
                             登録チャンネル、履歴、設定を含みます。
                         </div>
+                        
+                        <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
+                        <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">データリセット</div>
+                        <button 
+                            onClick={handleResetUserData}
+                            className="w-full text-left flex items-center px-4 py-2 hover:bg-red-100 dark:hover:bg-red-900/50 text-sm text-red-600 dark:text-red-400 gap-2"
+                        >
+                            <TrashIcon />
+                            全ユーザーデータをリセット
+                        </button>
                     </div>
                 </div>
             </div>

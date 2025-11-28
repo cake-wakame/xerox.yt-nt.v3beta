@@ -1,9 +1,8 @@
 import React from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for NavLink from react-router-dom
+import { NavLink } from 'react-router-dom';
 import { HomeIcon, ShortsIcon, SubscriptionsIcon, YouIcon } from './icons/Icons';
 import { useTheme } from '../hooks/useTheme';
-
-const { NavLink } = ReactRouterDOM;
 
 const BottomNavigation: React.FC = () => {
   const { theme } = useTheme();

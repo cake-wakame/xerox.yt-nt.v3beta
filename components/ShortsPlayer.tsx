@@ -1,9 +1,8 @@
 
 import React from 'react';
 import type { Video } from '../types';
-import * as ReactRouterDOM from 'react-router-dom';
-
-const { Link } = ReactRouterDOM;
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 
 interface ShortsPlayerProps {
     video: Video;

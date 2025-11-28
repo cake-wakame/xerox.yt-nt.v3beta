@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for BrowserRouter from react-router-dom
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import { PlaylistProvider } from './contexts/PlaylistContext';
@@ -8,8 +9,6 @@ import { SearchHistoryProvider } from './contexts/SearchHistoryContext';
 import { HistoryProvider } from './contexts/HistoryContext';
 import { PreferenceProvider } from './contexts/PreferenceContext';
 import { ThemeProvider } from './hooks/useTheme';
-
-const { BrowserRouter } = ReactRouterDOM;
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named imports for react-router-dom components and hooks.
+import { useParams, Link } from 'react-router-dom';
 import { getChannelDetails, getChannelVideos, getChannelHome, mapHomeVideoToVideo, getPlayerConfig } from '../utils/api';
 import type { ChannelDetails, Video, Channel, ChannelHomeData, HomePlaylist } from '../types';
 import VideoGrid from '../components/VideoGrid';
@@ -10,8 +11,6 @@ import { usePreference } from '../contexts/PreferenceContext';
 import HorizontalScrollContainer from '../components/HorizontalScrollContainer';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { BlockIcon } from '../components/icons/Icons';
-
-const { useParams, Link } = ReactRouterDOM;
 
 type Tab = 'home' | 'videos';
 

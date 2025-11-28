@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named import for Link from react-router-dom
+import { Link } from 'react-router-dom';
 import { usePlaylist } from '../contexts/PlaylistContext';
 import { getVideosByIds } from '../utils/api';
 import type { Playlist } from '../types';
 import { PlaylistIcon, PlayIcon } from '../components/icons/Icons';
-
-const { Link } = ReactRouterDOM;
 
 const YouPage: React.FC = () => {
     const { playlists } = usePlaylist();

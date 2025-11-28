@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Use named imports for react-router-dom components and hooks.
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import BottomNavigation from './components/BottomNavigation';
@@ -17,8 +18,6 @@ import { useTheme } from './hooks/useTheme';
 import { AiProvider } from './contexts/AiContext';
 import HistoryDeletionModal from './components/HistoryDeletionModal';
 import SearchHistoryDeletionModal from './components/SearchHistoryDeletionModal';
-
-const { Routes, Route, useLocation } = ReactRouterDOM;
 
 const App: React.FC = () => {
   const { theme } = useTheme();
