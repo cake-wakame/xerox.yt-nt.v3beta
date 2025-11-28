@@ -13,16 +13,16 @@ import { LikeIcon, CommentIcon, CloseIcon, BlockIcon, TrashIcon } from '../compo
 import CommentComponent from '../components/Comment';
 import { useTheme } from '../hooks/useTheme';
 
-// Re-created Chevron Icons for better visibility
+// Re-created Chevron Icons - Increased size (approx 1.7x) and bolder design
 const ChevronUpIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" className="fill-current text-white w-8 h-8">
-        <path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-14 h-14 drop-shadow-lg">
+        <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
     </svg>
 );
 
 const ChevronDownIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" className="fill-current text-white w-8 h-8">
-        <path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6 6z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-14 h-14 drop-shadow-lg">
+        <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
     </svg>
 );
 
@@ -184,8 +184,8 @@ const ShortsPage: React.FC = () => {
     useEffect(() => {
         if (videos.length > 0 && context?.type !== 'channel') {
             const remainingVideos = videos.length - 1 - currentIndex;
-            // 残りが10本を切ったら次のバッチを取得してストックする
-            if (remainingVideos < 10 && !isFetchingMore && !isLoading) {
+            // 常に10個先までDOMにマウントするため、残りが15個を切ったら早めに取得する
+            if (remainingVideos < 15 && !isFetchingMore && !isLoading) {
                 fetchMoreShorts();
             }
         }
@@ -293,7 +293,7 @@ const ShortsPage: React.FC = () => {
             <button
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
-                className={`absolute left-4 md:left-[calc(50%-25rem)] top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex === 0 ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
+                className={`absolute left-4 md:left-[calc(50%-25rem)] top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex === 0 ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
                 title="前の動画"
             >
                 <ChevronUpIcon />
@@ -303,9 +303,9 @@ const ShortsPage: React.FC = () => {
                 {/* Main Player Container - Renders list but hides non-active */}
                 <div className="relative h-[85vh] max-h-[900px] aspect-[9/16] rounded-2xl shadow-2xl overflow-hidden bg-black flex-shrink-0 z-10">
                      {videos.map((video, index) => {
-                         // Unmount if too far away to save memory (Keep Prev 2, Current, Next 2)
-                         // 前後2つまでプリロードして、ぐるぐる時間を減らす
-                         if (Math.abs(currentIndex - index) > 2) return null;
+                         // Unmount if too far away to save memory
+                         // Keep Prev 1, Current, Next 10 (To ensure instant loading for next 10 clicks)
+                         if (index < currentIndex - 1 || index > currentIndex + 10) return null;
                          
                          const isActive = index === currentIndex;
                          
@@ -378,7 +378,7 @@ const ShortsPage: React.FC = () => {
             <button
                 onClick={handleNext}
                 disabled={currentIndex >= videos.length - 1 && !isFetchingMore}
-                className={`absolute right-4 md:right-[calc(50%-25rem)] top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
+                className={`absolute right-4 md:right-[calc(50%-25rem)] top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
                 title="次の動画"
             >
                 <ChevronDownIcon />
