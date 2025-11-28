@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ShortsPlayer from '../components/ShortsPlayer';
 import { getPlayerConfig, getComments } from '../utils/api';
@@ -52,7 +53,10 @@ const ShortsPage: React.FC = () => {
         
         try {
             // Add playsinline=1 for iOS autoplay compatibility
-            const paramsPromise = getPlayerConfig().then(p => p + "&playsinline=1");
+            const paramsPromise = getPlayerConfig().then(p => {
+                // Remove existing autoplay param if any to avoid duplication logic later
+                return p.replace(/&?autoplay=[01]/g, "") + "&playsinline=1";
+            });
             
             // Use XRAI for Shorts
             const videosPromise = getXraiShorts({
@@ -157,10 +161,12 @@ const ShortsPage: React.FC = () => {
 
     const currentVideo = videos[currentIndex];
 
-    // Build playlist params to encourage auto-play/continuous play logic in the player
-    // We pass the current ID + the next few IDs. This often triggers "Playlist" behavior in embeds.
-    const playlistIds = videos.slice(currentIndex, currentIndex + 10).map(v => v.id).join(',');
-    const extendedParams = `${playerParams}&playlist=${playlistIds}&loop=0`;
+    // Build playlist params to encourage auto-play/continuous play logic in the player.
+    // We pass the subsequent video IDs. This allows the YouTube player to internally queue the next video,
+    // which helps with iOS autoplay policies (interpreting it as a playlist interaction).
+    // Also explicitly force autoplay=1 so button navigation starts the video immediately.
+    const playlistIds = videos.slice(currentIndex + 1, currentIndex + 11).map(v => v.id).join(',');
+    const extendedParams = `${playerParams}&autoplay=1&playlist=${playlistIds}`;
 
     return (
         // Added pt-8 to prevent overlap with header, and theme-aware background
