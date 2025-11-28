@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import VideoGrid from '../components/VideoGrid';
 import ShortsShelf from '../components/ShortsShelf';
@@ -8,7 +7,6 @@ import { useHistory } from '../contexts/HistoryContext';
 import { usePreference } from '../contexts/PreferenceContext';
 import { getXraiRecommendations } from '../utils/recommendation';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
-import { parseDuration } from '../utils/api';
 import type { Video } from '../types';
 import { SearchIcon, SaveIcon, DownloadIcon } from '../components/icons/Icons';
 
@@ -25,8 +23,6 @@ const HomePage: React.FC = () => {
     const [hasNextPage, setHasNextPage] = useState(true);
     
     const seenIdsRef = useRef<Set<string>>(new Set());
-    
-    // Ref to track feed length without triggering re-renders/dependency changes
     const feedLengthRef = useRef(0);
 
     const { subscribedChannels } = useSubscription();
@@ -35,7 +31,6 @@ const HomePage: React.FC = () => {
     const { ngKeywords, ngChannels, hiddenVideos, negativeKeywords, exportUserData, importUserData } = usePreference();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Update feed length ref whenever feed changes
     useEffect(() => {
         feedLengthRef.current = feed.length;
     }, [feed.length]);
@@ -49,7 +44,6 @@ const HomePage: React.FC = () => {
 
 
     const loadRecommendations = useCallback(async (pageNum: number) => {
-        // Stop loading if we hit the limit (Using Ref to prevent dependency loop)
         if (feedLengthRef.current >= MAX_FEED_VIDEOS) {
             setHasNextPage(false);
             setIsFetchingMore(false);
@@ -57,68 +51,53 @@ const HomePage: React.FC = () => {
         }
 
         const isInitial = pageNum === 1;
-        if (isInitial) {
-            setIsLoading(true);
-        } else {
-            setIsFetchingMore(true);
-        }
+        if (isInitial) setIsLoading(true);
+        else setIsFetchingMore(true);
         
         try {
-            const rawVideos = await getXraiRecommendations({
+            const { videos: newVideos, shorts: newShorts } = await getXraiRecommendations({
                 searchHistory, watchHistory, shortsHistory, subscribedChannels,
                 ngKeywords, ngChannels, hiddenVideos, negativeKeywords,
                 page: pageNum
             });
             
-            if (rawVideos.length === 0 && pageNum > 1) {
+            if (newVideos.length === 0 && pageNum > 1) {
                 setHasNextPage(false);
                 setIsFetchingMore(false);
                 return;
             }
+            
+            const uniqueNewVideos = newVideos.filter(v => !seenIdsRef.current.has(v.id));
+            uniqueNewVideos.forEach(v => seenIdsRef.current.add(v.id));
 
-            const newVideos: Video[] = [];
-            const newShorts: Video[] = [];
-
-            for (const v of rawVideos) {
-                if (seenIdsRef.current.has(v.id)) continue;
-                seenIdsRef.current.add(v.id);
-
-                const seconds = parseDuration(v.isoDuration, v.duration);
-                const isShort = (seconds > 0 && seconds <= 60) || v.title.toLowerCase().includes('#shorts');
-
-                if (isShort) {
-                    newShorts.push(v);
-                } else {
-                    newVideos.push(v);
-                }
-            }
+            const uniqueNewShorts = newShorts.filter(s => !seenIdsRef.current.has(s.id));
+            uniqueNewShorts.forEach(s => seenIdsRef.current.add(s.id));
 
             if (isInitial) {
-                setFeed(newVideos);
-                setShortsFeed(newShorts);
+                setFeed(uniqueNewVideos);
+                setShortsFeed(uniqueNewShorts);
             } else {
                 setFeed(prev => {
-                    const combined = [...prev, ...newVideos];
-                    // Safety limit check
+                    const combined = [...prev, ...uniqueNewVideos];
                     if (combined.length >= MAX_FEED_VIDEOS) {
                          setHasNextPage(false);
                          return combined.slice(0, MAX_FEED_VIDEOS);
                     }
                     return combined;
                 });
-                setShortsFeed(prev => [...prev, ...newShorts]);
+                if (uniqueNewShorts.length > 0 && shortsFeed.length < 50) { // Avoid bloating the shorts shelf on scroll
+                   setShortsFeed(prev => [...prev, ...uniqueNewShorts]);
+                }
             }
 
         } catch (err: any) {
-            if (isInitial) {
-                setError(err.message || '動画の読み込みに失敗しました。');
-            }
+            if (isInitial) setError(err.message || '動画の読み込みに失敗しました。');
             console.error(err);
         } finally {
             setIsLoading(false);
             setIsFetchingMore(false);
         }
-    }, [subscribedChannels, searchHistory, watchHistory, shortsHistory, ngKeywords, ngChannels, hiddenVideos, negativeKeywords]);
+    }, [subscribedChannels, searchHistory, watchHistory, shortsHistory, ngKeywords, ngChannels, hiddenVideos, negativeKeywords, shortsFeed.length]);
 
     useEffect(() => {
         setPage(1);
