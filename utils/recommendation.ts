@@ -1,3 +1,4 @@
+
 import type { Video, Channel } from '../types';
 import { searchVideos, getRecommendedVideos, parseDuration } from './api';
 import { extractKeywords, calculateMagnitude } from './xrai';
@@ -181,7 +182,7 @@ export const getXraiShorts = async (sources: RecommendationSource & { seenIds?: 
     // --- Candidate Generation (Robust Popularity Sources) ---
     
     // 1. Popular/Trending Pool (Japanese)
-    // 日本向けの一般的な人気ワードで検索して候補を確保する
+    // 日本向けの一般的な人気ワード + 学生に人気のジャンル（ドラマ、コント、雑学、解説）
     const popularQueries = [
         "急上昇 #shorts", 
         "人気 #shorts", 
@@ -192,7 +193,15 @@ export const getXraiShorts = async (sources: RecommendationSource & { seenIds?: 
         "犬 #shorts", 
         "アニメ #shorts", 
         "歌ってみた #shorts", 
-        "踊ってみた #shorts"
+        "踊ってみた #shorts",
+        "ショートドラマ #shorts",
+        "ドラマ #shorts",
+        "コント #shorts",
+        "あるある #shorts",
+        "雑学 #shorts",
+        "豆知識 #shorts",
+        "ライフハック #shorts",
+        "解説 #shorts"
     ];
     // Shuffle queries to get variety each load
     const selectedQueries = shuffleArray(popularQueries).slice(0, 3);
