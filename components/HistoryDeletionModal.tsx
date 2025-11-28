@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useHistory } from '../contexts/HistoryContext';
+import { usePreference } from '../contexts/PreferenceContext';
 import { CloseIcon, TrashIcon } from './icons/Icons';
 import type { Video } from '../types';
 
@@ -11,6 +12,7 @@ interface HistoryDeletionModalProps {
 
 const HistoryDeletionModal: React.FC<HistoryDeletionModalProps> = ({ isOpen, onClose }) => {
     const { history, removeVideosFromHistory } = useHistory();
+    const { removeNegativeProfileForVideos } = usePreference();
     const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(new Set());
 
     if (!isOpen) return null;
@@ -28,7 +30,12 @@ const HistoryDeletionModal: React.FC<HistoryDeletionModalProps> = ({ isOpen, onC
     const handleDeleteSelected = () => {
         if (selectedVideoIds.size > 0) {
             if (window.confirm(`${selectedVideoIds.size}件の履歴を削除しますか？`)) {
+                const videosToDelete = history.filter(v => selectedVideoIds.has(v.id));
+                
+                // Remove from history and also clear any associated negative learning profile
                 removeVideosFromHistory(Array.from(selectedVideoIds));
+                removeNegativeProfileForVideos(videosToDelete);
+
                 setSelectedVideoIds(new Set());
             }
         }
@@ -44,7 +51,7 @@ const HistoryDeletionModal: React.FC<HistoryDeletionModalProps> = ({ isOpen, onC
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={onClose}>
-            <div className="bg-yt-white/90 dark:bg-yt-light-black/80 backdrop-blur-lg w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[80vh] border border-yt-spec-light-20 dark:border-yt-spec-20" onClick={e => e.stopPropagation()}>
+            <div className="bg-yt-white/90 dark:bg-yt-light-black/80 backdrop-blur-lg w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[80vh] border border-yt-spec-light-20 dark:border-yt-spec-20 animate-scale-in" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-yt-spec-light-20 dark:border-yt-spec-20 flex justify-between items-center">
                     <h2 className="text-xl font-bold text-black dark:text-white">視聴履歴の管理</h2>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10">

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { extractKeywords } from '../utils/xrai';
+import type { Video } from '../types';
 
 interface PreferenceContextType {
   ngKeywords: string[];
@@ -16,6 +17,7 @@ interface PreferenceContextType {
 
   addHiddenVideo: (videoId: string, analyzeContent?: { title: string, channelName: string }) => void;
   isvideoHidden: (videoId: string) => boolean;
+  removeNegativeProfileForVideos: (videos: Video[]) => void;
 
   exportUserData: () => void;
   importUserData: (file: File) => Promise<void>;
@@ -41,7 +43,8 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
   const [negativeKeywords, setNegativeKeywords] = useState<Map<string, number>>(() => {
      try {
          const raw = JSON.parse(window.localStorage.getItem('negativeKeywords') || '[]');
-         return new Map(raw);
+         // FIX: Explicitly type Map constructor to avoid inference issues.
+         return new Map<string, number>(raw);
      } catch { return new Map(); }
   });
 
@@ -76,12 +79,43 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
               const newMap = new Map<string, number>(prev);
               keywords.forEach(k => {
                   const current = newMap.get(k);
-                  // Ensure current is treated as a number
                   newMap.set(k, (typeof current === 'number' ? current : 0) + 1);
               });
               return newMap;
           });
       }
+  };
+  
+  const removeNegativeProfileForVideos = (videos: Video[]) => {
+    if (videos.length === 0) return;
+
+    // 1. Remove from hiddenVideoIds
+    const idsToRemove = new Set(videos.map(v => v.id));
+    setHiddenVideoIds(prev => prev.filter(id => !idsToRemove.has(id)));
+
+    // 2. Decrement negativeKeywords
+    const keywordsToDecrement = videos.flatMap(v => [
+        ...extractKeywords(v.title),
+        ...extractKeywords(v.channelName)
+    ]);
+
+    setNegativeKeywords(prev => {
+        // FIX: Explicitly type the new Map to ensure currentWeight is a number, resolving TS errors.
+        const newMap = new Map<string, number>(prev);
+        let wasModified = false;
+        keywordsToDecrement.forEach(keyword => {
+            if (newMap.has(keyword)) {
+                const currentWeight = newMap.get(keyword)!;
+                if (currentWeight <= 1) {
+                    newMap.delete(keyword);
+                } else {
+                    newMap.set(keyword, currentWeight - 1);
+                }
+                wasModified = true;
+            }
+        });
+        return wasModified ? newMap : prev;
+    });
   };
 
   const isvideoHidden = (videoId: string) => hiddenVideoIds.includes(videoId);
@@ -148,7 +182,7 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
     <PreferenceContext.Provider value={{
       ngKeywords, ngChannels, hiddenVideoIds, negativeKeywords,
       addNgKeyword, removeNgKeyword, addNgChannel, removeNgChannel, isNgChannel,
-      addHiddenVideo, isvideoHidden,
+      addHiddenVideo, isvideoHidden, removeNegativeProfileForVideos,
       exportUserData, importUserData
     }}>
       {children}
