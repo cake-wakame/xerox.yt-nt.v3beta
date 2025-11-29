@@ -364,70 +364,48 @@ app.get('/api/playlist', async (req, res) => {
 });
 
 // -------------------------------------------------------------------
-// ゲストモード Shorts 抽出 API (/api/fshorts)
-// ホームフィードから Shorts だけ取り出す
+// ホームフィード RAW そのまま返す API (/api/fshorts?page=x)
+// ゲストモードで取得、ショート抽出はしない（加工ゼロ）
 // -------------------------------------------------------------------
 app.get('/api/fshorts', async (req, res) => {
   try {
-    const youtube = await createYoutube();
-    const { page = '1', limit = '10' } = req.query;
+    const { page = '1' } = req.query;
+    const targetPage = Math.max(1, parseInt(page, 10) || 1);
 
+    const youtube = await createYoutube();
+
+    // 1ページ目を取得
     let feed = await youtube.getHomeFeed();
 
-    // ページ送り処理
-    let targetPage = parseInt(page);
+    // page>1 の場合は continuation を進める
     let currentPage = 1;
-
-    while (currentPage < targetPage && feed.has_continuation) {
-      feed = await feed.getContinuation();
+    while (currentPage < targetPage) {
+      if (!feed || !feed.has_continuation) break;
+      try {
+        feed = await feed.getContinuation();
+      } catch (e) {
+        console.warn(`[api/fshorts] continuation failed at page ${currentPage + 1}:`, e.message);
+        break;
+      }
       currentPage++;
     }
 
-    // ------------------------------
-    // Shorts 抽出処理
-    // ------------------------------
-    const shorts = [];
-
-    const extractShorts = (obj) => {
-      if (!obj) return;
-
-      if (Array.isArray(obj)) {
-        obj.forEach(extractShorts);
-        return;
-      }
-
-      // Shorts セクション
-      if (obj.type === "Shorts") {
-        if (Array.isArray(obj.items)) {
-          shorts.push(...obj.items);
-        }
-      }
-
-      // 深いネストに備える
-      if (typeof obj === "object") {
-        for (const key in obj) {
-          extractShorts(obj[key]);
-        }
-      }
-    };
-
-    extractShorts(feed);
-
-    const max = parseInt(limit);
-    const resultShorts = shorts.slice(0, max);
+    // 関数やクラスの参照が含まれている可能性があるため
+    // シンプルな JSON に変換して返す（加工ゼロの"構造そのまま"）
+    const raw = JSON.parse(JSON.stringify(feed));
 
     res.status(200).json({
       page: targetPage,
-      count: resultShorts.length,
-      hasMore: feed.has_continuation,
-      shorts: resultShorts
+      hasMore: !!(feed && feed.has_continuation),
+      raw // ホームフィードの生データ（JSON化済）
     });
 
   } catch (err) {
-    console.error("Error in /api/fshorts:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error in /api/fshorts (raw):", err);
+    res.status(500).json({ error: String(err) });
   }
 });
+
 
 // -------------------------------------------------------------------
 // ホームフィード（旧急上昇） API (/api/fvideo)
