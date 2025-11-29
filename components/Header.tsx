@@ -100,6 +100,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
     headerBgClass = 'glass-panel';
   }
 
+  // Determine logo variant
+  const logoVariant = theme === 'light-glass' ? 'glass' : theme === 'light' ? 'light' : 'dark';
 
   const ThemeSelectItem: React.FC<{ value: Theme, label: string, icon: React.ReactNode }> = ({ value, label, icon }) => (
     <button
@@ -122,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
           <MenuIcon />
         </button>
         <Link to="/" className="flex items-center gap-2" aria-label="YouTubeホーム">
-            <XeroxLogo className="h-8 w-auto" />
+            <XeroxLogo className="h-8 w-auto" variant={logoVariant} />
             <div className="hidden sm:flex items-baseline">
                 <span className="text-black dark:text-white text-xl font-bold tracking-tighter font-sans">XeroxYT-NTv3β</span>
             </div>

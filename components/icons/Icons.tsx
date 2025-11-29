@@ -17,18 +17,39 @@ export const YouTubeLogo: React.FC = () => (
     </svg>
 );
 
-export const XeroxLogo: React.FC<{className?: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 48" className={className}>
-        <defs>
-            <linearGradient id="xeroxGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#ef4444" />
-            </linearGradient>
-        </defs>
-        <path d="M66.52,7.74c-0.78-2.93-2.49-5.41-5.42-6.19C55.79,.13,34,0,34,0S12.21,.13,6.9,1.55 C3.97,2.33,2.27,4.81,1.48,7.74C0.06,13.05,0,24,0,24s0.06,10.95,1.48,16.26c0.78,2.93,2.49,5.41,5.42,6.19 C12.21,47.87,34,48,34,48s21.79-0.13,27.1-1.55c2.93-0.78,4.64-3.26,5.42-6.19C67.94,34.95,68,24,68,24S67.94,13.05,66.52,7.74z" fill="#202020" stroke="url(#xeroxGradient)" strokeWidth="6" />
-        <path d="M 45,24 27,14 27,34" fill="#fff" />
-    </svg>
-);
+interface XeroxLogoProps {
+    className?: string;
+    variant?: 'dark' | 'light' | 'glass';
+}
+
+export const XeroxLogo: React.FC<XeroxLogoProps> = ({className, variant = 'dark'}) => {
+    // Determine colors based on variant
+    let bgFill = "#202020"; // Dark default
+    let arrowFill = "#fff";
+    
+    if (variant === 'light') {
+        bgFill = "#ffffff";
+        arrowFill = "#0f0f0f";
+    } else if (variant === 'glass') {
+        bgFill = "rgba(255, 255, 255, 0.4)"; // Translucent
+        arrowFill = "#1e293b"; // Dark slate for contrast on glass
+    }
+
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 48" className={className}>
+            <defs>
+                <linearGradient id="xeroxGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                </linearGradient>
+            </defs>
+            {/* Background Shape */}
+            <path d="M66.52,7.74c-0.78-2.93-2.49-5.41-5.42-6.19C55.79,.13,34,0,34,0S12.21,.13,6.9,1.55 C3.97,2.33,2.27,4.81,1.48,7.74C0.06,13.05,0,24,0,24s0.06,10.95,1.48,16.26c0.78,2.93,2.49,5.41,5.42,6.19 C12.21,47.87,34,48,34,48s21.79-0.13,27.1-1.55c2.93-0.78,4.64-3.26,5.42-6.19C67.94,34.95,68,24,68,24S67.94,13.05,66.52,7.74z" fill={bgFill} stroke="url(#xeroxGradient)" strokeWidth="6" />
+            {/* Play Arrow */}
+            <path d="M 45,24 27,14 27,34" fill={arrowFill} />
+        </svg>
+    );
+};
 
 
 export const SearchIcon: React.FC = () => (
