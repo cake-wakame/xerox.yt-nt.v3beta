@@ -15,13 +15,13 @@ import { useTheme } from '../hooks/useTheme';
 
 // Re-created Chevron Icons - Increased size (approx 1.7x) and bolder design
 const ChevronUpIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-14 h-14 drop-shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-10 h-10 md:w-12 md:h-12 drop-shadow-lg">
         <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
     </svg>
 );
 
 const ChevronDownIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-14 h-14 drop-shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="fill-current text-white w-10 h-10 md:w-12 md:h-12 drop-shadow-lg">
         <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
     </svg>
 );
@@ -318,11 +318,13 @@ const ShortsPage: React.FC = () => {
 
     return (
         <div className={`shorts-container flex justify-center items-center h-[calc(100vh-3.5rem)] w-full overflow-hidden relative ${theme.includes('glass') ? 'bg-transparent' : 'bg-yt-white dark:bg-yt-black'}`}>
+            
+            {/* Previous Button - Fixed Left Position */}
             <button
                 onClick={handlePrev}
                 disabled={currentIndex === 0}
-                className={`absolute left-4 md:left-[calc(50%-20rem)] top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex === 0 ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
-                title="前の動画"
+                className={`fixed left-6 md:left-8 lg:left-24 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all shadow-xl border border-white/10 hidden md:flex items-center justify-center group ${currentIndex === 0 ? 'opacity-0 cursor-not-allowed' : 'opacity-80 hover:opacity-100 hover:scale-110 active:scale-95'}`}
+                aria-label="前の動画"
             >
                 <ChevronUpIcon />
             </button>
@@ -406,10 +408,11 @@ const ShortsPage: React.FC = () => {
                 )}
             </div>
 
+            {/* Next Button - Fixed Right Position */}
             <button
                 onClick={handleNext}
                 disabled={currentIndex >= videos.length - 1 && !isFetchingMore}
-                className={`absolute right-4 md:right-[calc(50%-20rem)] top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm transition-all shadow-lg hidden md:flex items-center justify-center ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-0 cursor-not-allowed' : 'opacity-70 hover:opacity-100 hover:scale-110 active:scale-95'}`}
+                className={`fixed right-6 md:right-8 lg:right-24 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition-all shadow-xl border border-white/10 hidden md:flex items-center justify-center group ${currentIndex >= videos.length - 1 && !isFetchingMore ? 'opacity-0 cursor-not-allowed' : 'opacity-80 hover:opacity-100 hover:scale-110 active:scale-95'}`}
                 title="次の動画"
             >
                 <ChevronDownIcon />
