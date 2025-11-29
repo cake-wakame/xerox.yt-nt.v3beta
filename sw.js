@@ -1,8 +1,9 @@
-const CACHE_NAME = 'xeroxyt-cache-v1';
+const CACHE_NAME = 'xeroxyt-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/styles.css'
+  '/styles.css',
+  '/icon.png'
 ];
 
 self.addEventListener('install', (event) => {
