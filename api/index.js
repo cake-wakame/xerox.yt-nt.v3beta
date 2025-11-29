@@ -364,64 +364,31 @@ app.get('/api/playlist', async (req, res) => {
 });
 
 // -------------------------------------------------------------------
-// おすすめショート動画 API (/api/fshorts?page=x)
-// 日本向け・Shortsタブから取得・10本ずつ
+// ホームフィード RAW そのまま返す API
+// ショート抽出なし / 加工なし / RAW データ
+// (/api/fshorts?page=x)
 // -------------------------------------------------------------------
 app.get('/api/fshorts', async (req, res) => {
   try {
     const youtube = await createYoutube();
     const { page = '1' } = req.query;
 
-    const targetPage = parseInt(page);
-    const PAGE_SIZE = 10;
+    let feed = await youtube.getHomeFeed();
 
-    // まずホーム取得
-    let home = await youtube.getHomeFeed();
+    // page > 1 の場合 continuation 多めに進める
+    let targetPage = parseInt(page);
+    let currentPage = 1;
 
-    // Shorts タブ取得（最重要）
-    const shortsTab = home.getTabByName("Shorts");
-    if (!shortsTab) {
-      return res.status(200).json({
-        page: targetPage,
-        shorts: [],
-        hasMore: false,
-        reason: "Shorts tab not found"
-      });
+    while (currentPage < targetPage && feed.has_continuation) {
+      feed = await feed.getContinuation();
+      currentPage++;
     }
 
-    // Shortsタブの内容はここ
-    let current = shortsTab;
-    let shorts = [];
-
-    // contents → 正規パス
-    if (current.contents?.[0]?.contents) {
-      shorts.push(...current.contents[0].contents.filter(v => v.video_id));
-    }
-
-    // ページ x まで進める
-    const REQUIRED = targetPage * PAGE_SIZE;
-    let attempts = 0;
-
-    while (shorts.length < REQUIRED && current.has_continuation && attempts < 10) {
-      current = await current.getContinuation();
-
-      if (current?.contents?.[0]?.contents) {
-        const list = current.contents[0].contents.filter(v => v.video_id);
-        shorts.push(...list);
-      }
-
-      attempts++;
-    }
-
-    const start = (targetPage - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-
-    const pagedShorts = shorts.slice(start, end);
-
+    // ★ここが重要：加工せず完全RAWで返す
     res.status(200).json({
       page: targetPage,
-      shorts: pagedShorts,
-      hasMore: shorts.length > end || current.has_continuation
+      hasMore: feed.has_continuation,
+      raw: feed // ←そのまま丸ごと返す
     });
 
   } catch (err) {
@@ -429,28 +396,6 @@ app.get('/api/fshorts', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-app.get('/api/shorts', async (req, res) => {
-  try {
-    const youtube = await createYoutube();
-    const { id } = req.query;
-    if (!id) return res.status(400).json({ error: "Missing channel id" });
-
-    const channel = await youtube.getChannel(id);
-
-    // ★ これが Shorts タブの正式取得方法
-    const shortsFeed = await channel.getShorts();
-
-    // ここを一切加工せず丸ごと返す（完全RAW）
-    res.status(200).json(shortsFeed);
-
-  } catch (err) {
-    console.error("Error in /api/shorts:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 
 // -------------------------------------------------------------------
 // ホームフィード（旧急上昇） API (/api/fvideo)
