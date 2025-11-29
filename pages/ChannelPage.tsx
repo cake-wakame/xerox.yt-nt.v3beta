@@ -227,6 +227,14 @@ const ChannelPage: React.FC = () => {
                             <Link to={`/watch/${homeData.topVideo.videoId}`}>
                                 <h3 className="text-base md:text-xl font-bold mb-1 md:mb-2 line-clamp-2 leading-snug">{homeData.topVideo.title}</h3>
                             </Link>
+                            
+                            <div className="flex items-center mb-2">
+                                {channelDetails && (
+                                    <Link to={`/channel/${channelDetails.id}`} className="text-black dark:text-white font-semibold hover:text-yt-icon text-sm md:text-base">
+                                        {channelDetails.name}
+                                    </Link>
+                                )}
+                            </div>
 
                             <div className="flex items-center text-xs md:text-sm text-yt-light-gray font-medium mb-3">
                                 <span>{homeData.topVideo.viewCount}</span>
@@ -234,8 +242,8 @@ const ChannelPage: React.FC = () => {
                                 <span>{homeData.topVideo.published}</span>
                             </div>
                             
-                            <p className="text-sm text-yt-light-gray line-clamp-2">
-                                {homeData.topVideo.description?.replace(/<br\s*\/?>/gi, ' ')}
+                            <p className="text-sm text-yt-light-gray line-clamp-3 md:line-clamp-4 whitespace-pre-line hidden md:block">
+                                {homeData.topVideo.description?.replace(/<br\s*\/?>/gi, '\n')}
                             </p>
                         </div>
                     </div>
@@ -284,6 +292,10 @@ const ChannelPage: React.FC = () => {
                     <h1 className="text-2xl md:text-4xl font-bold mb-1 md:mb-2 tracking-tight">{channelDetails.name}</h1>
                     <div className="text-yt-light-gray text-sm md:text-base mb-3 flex flex-wrap justify-center md:justify-start gap-x-2">
                          <span>{channelDetails.handle}</span>
+                         <span>•</span>
+                         <span>登録者数 {channelDetails.subscriberCount}</span>
+                         <span>•</span>
+                         <span>動画 {channelDetails.videoCount} 本</span>
                     </div>
                     <p className="text-yt-light-gray text-sm line-clamp-1 mb-4 max-w-2xl cursor-pointer mx-auto md:mx-0" onClick={() => alert(channelDetails.description)}>
                         {channelDetails.description}

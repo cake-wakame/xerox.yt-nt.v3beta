@@ -18,10 +18,6 @@ import { useTheme } from './hooks/useTheme';
 import { AiProvider } from './contexts/AiContext';
 import HistoryDeletionModal from './components/HistoryDeletionModal';
 import SearchHistoryDeletionModal from './components/SearchHistoryDeletionModal';
-import UpdateNotificationModal from './components/UpdateNotificationModal';
-
-// This global constant is injected by vite.config.ts
-declare const __APP_VERSION__: string;
 
 const App: React.FC = () => {
   const { theme } = useTheme();
@@ -32,7 +28,6 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(!isPlayerPage);
   const [isHistoryDeletionModalOpen, setIsHistoryDeletionModalOpen] = useState(false);
   const [isSearchHistoryDeletionModalOpen, setIsSearchHistoryDeletionModalOpen] = useState(false);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   useEffect(() => {
     if (isPlayerPage) {
@@ -45,13 +40,6 @@ const App: React.FC = () => {
     }
   }, [location.pathname, isPlayerPage, isShortsPage]);
 
-  useEffect(() => {
-    const lastSeenVersion = localStorage.getItem('appVersion');
-    if (lastSeenVersion !== __APP_VERSION__) {
-        setIsUpdateModalOpen(true);
-    }
-  }, []);
-
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
   }, []);
@@ -60,10 +48,6 @@ const App: React.FC = () => {
   const openSearchHistoryDeletionModal = useCallback(() => setIsSearchHistoryDeletionModalOpen(true), []);
   const closeHistoryDeletionModal = useCallback(() => setIsHistoryDeletionModalOpen(false), []);
   const closeSearchHistoryDeletionModal = useCallback(() => setIsSearchHistoryDeletionModalOpen(false), []);
-  const handleCloseUpdateModal = useCallback(() => {
-    setIsUpdateModalOpen(false);
-    localStorage.setItem('appVersion', __APP_VERSION__);
-  }, []);
 
   const getMargin = () => {
     if (isShortsPage) return ''; 
@@ -125,12 +109,6 @@ const App: React.FC = () => {
             <SearchHistoryDeletionModal 
             isOpen={isSearchHistoryDeletionModalOpen} 
             onClose={closeSearchHistoryDeletionModal} 
-            />
-        )}
-        {isUpdateModalOpen && (
-            <UpdateNotificationModal
-                isOpen={isUpdateModalOpen}
-                onClose={handleCloseUpdateModal}
             />
         )}
         </div>

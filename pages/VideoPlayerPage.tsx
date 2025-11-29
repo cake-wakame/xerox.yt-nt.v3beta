@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 // FIX: Use named imports for react-router-dom components and hooks.
-import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getVideoDetails, getPlayerConfig, getComments, getVideosByIds, getExternalRelatedVideos } from '../utils/api';
 import type { VideoDetails, Video, Comment, Channel } from '../types';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -17,7 +17,6 @@ const VideoPlayerPage: React.FC = () => {
     const { videoId } = useParams<{ videoId: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
     const playlistId = searchParams.get('list');
-    const navigate = useNavigate();
 
     const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -104,12 +103,6 @@ const VideoPlayerPage: React.FC = () => {
             getVideoDetails(videoId)
                 .then(details => {
                     if (isMounted) {
-                        if (!details.channel.id || details.channel.id === 'N/A') {
-                            console.warn("Channel ID is invalid, redirecting to home.");
-                            navigate('/');
-                            return;
-                        }
-
                         setVideoDetails(details);
                         // Request: No XRAI, just 20 items whatever they are.
                         if (details.relatedVideos && details.relatedVideos.length > 0) {
@@ -160,7 +153,7 @@ const VideoPlayerPage: React.FC = () => {
         return () => {
             isMounted = false;
         };
-    }, [videoId, addVideoToHistory, navigate]);
+    }, [videoId, addVideoToHistory]);
 
     const shuffledPlaylistVideos = useMemo(() => {
         if (!isShuffle || playlistVideos.length === 0) return playlistVideos;

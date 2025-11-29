@@ -16,9 +16,9 @@ const ShortsCard: React.FC<ShortsCardProps> = ({ video, context }) => {
     <Link 
       to={`/shorts/${video.id}`} 
       state={{ context }}
-      className="group block"
+      className="w-44 flex-shrink-0 group"
     >
-      <div className="relative rounded-xl overflow-hidden aspect-[9/16] bg-yt-dark-gray shadow-md group-hover:shadow-xl transition-all duration-300">
+      <div className="relative rounded-xl overflow-hidden aspect-[9/16] bg-yt-light dark:bg-yt-dark-gray shadow-md group-hover:shadow-xl transition-all duration-300">
         <img 
           src={video.thumbnailUrl} 
           alt={video.title} 
