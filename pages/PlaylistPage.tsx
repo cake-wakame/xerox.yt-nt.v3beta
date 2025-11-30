@@ -6,7 +6,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePlaylist } from '../contexts/PlaylistContext';
 import { getVideosByIds } from '../utils/api';
 import type { Video } from '../types';
-import { EditIcon, TrashIcon, PlayIcon, ShuffleIcon, RepeatIcon, DragHandleIcon, MoreIconHorizontal, CheckIcon } from '../components/icons/Icons';
+import { EditIcon, TrashIcon, PlayIcon, ShuffleIcon2, RepeatIcon, DragHandleIcon, MoreIconHorizontal, CheckIcon } from '../components/icons/Icons';
 import { useTheme } from '../hooks/useTheme';
 
 const PlaylistPage: React.FC = () => {
@@ -172,7 +172,7 @@ const PlaylistPage: React.FC = () => {
                                         to={`/watch/${firstVideoId}?list=${playlist.id}&shuffle=1`}
                                         className={`flex-1 rounded-full py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${secondaryButtonClass}`}
                                     >
-                                        <ShuffleIcon className="fill-current text-black dark:text-white w-5 h-5" />
+                                        <ShuffleIcon2 className="fill-current text-black dark:text-white w-5 h-5" />
                                         <span>シャッフル</span>
                                     </Link>
                                 </>

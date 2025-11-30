@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // FIX: Use named imports for react-router-dom components and hooks.
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { getVideoDetails, getPlayerConfig, getComments, getVideosByIds, getExternalRelatedVideos } from '../utils/api';
 import type { VideoDetails, Video, Comment, Channel } from '../types';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -13,9 +13,18 @@ import PlaylistPanel from '../components/PlaylistPanel';
 import RelatedVideoCard from '../components/RelatedVideoCard';
 import { LikeIcon, SaveIcon, MoreIconHorizontal, ShareIcon, DislikeIcon, ChevronRightIcon } from '../components/icons/Icons';
 
+declare global {
+    interface Window {
+        onYouTubeIframeAPIReady?: () => void;
+        YT?: any;
+    }
+}
+
+
 const VideoPlayerPage: React.FC = () => {
     const { videoId } = useParams<{ videoId: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const playlistId = searchParams.get('list');
 
     const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
@@ -25,7 +34,8 @@ const VideoPlayerPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
-    const [playerParams, setPlayerParams] = useState<string | null>(null);
+    const [player, setPlayer] = useState<any>(null);
+    const playerRef = useRef<HTMLDivElement>(null);
     const [playlistVideos, setPlaylistVideos] = useState<Video[]>([]);
     const [isCollaboratorMenuOpen, setIsCollaboratorMenuOpen] = useState(false);
     const collaboratorMenuRef = useRef<HTMLDivElement>(null);
@@ -47,12 +57,87 @@ const VideoPlayerPage: React.FC = () => {
         setIsLoop(searchParams.get('loop') === '1');
     }, [searchParams]);
     
+    const shuffledPlaylistVideos = useMemo(() => {
+        if (!isShuffle || playlistVideos.length === 0) return playlistVideos;
+        const currentIndex = playlistVideos.findIndex(v => v.id === videoId);
+        if (currentIndex === -1) return [...playlistVideos].sort(() => Math.random() - 0.5);
+        const otherVideos = [...playlistVideos.slice(0, currentIndex), ...playlistVideos.slice(currentIndex + 1)];
+        const shuffledOthers = otherVideos.sort(() => Math.random() - 0.5);
+        return [playlistVideos[currentIndex], ...shuffledOthers];
+    }, [isShuffle, playlistVideos, videoId]);
+
+    const onPlayerStateChange = useCallback((event: any) => {
+        // YT.PlayerState.ENDED is 0
+        if (event.data === 0 && playlistId) { 
+            const currentVideos = isShuffle ? shuffledPlaylistVideos : playlistVideos;
+            const currentIndex = currentVideos.findIndex(v => v.id === videoId);
+
+            if (currentIndex !== -1) {
+                let nextIndex = currentIndex + 1;
+                
+                if (isLoop && nextIndex >= currentVideos.length) {
+                    nextIndex = 0;
+                }
+
+                if (nextIndex < currentVideos.length) {
+                    const nextVideo = currentVideos[nextIndex];
+                    const newSearchParams = new URLSearchParams(searchParams);
+                    // Navigate to the next video, which will trigger a full page data reload
+                    navigate(`/watch/${nextVideo.id}?${newSearchParams.toString()}`, { replace: true });
+                }
+            }
+        }
+    }, [playlistId, isShuffle, isLoop, shuffledPlaylistVideos, playlistVideos, videoId, navigate, searchParams]);
+
+
     useEffect(() => {
-        const fetchPlayerParams = async () => {
-            setPlayerParams(await getPlayerConfig());
+        const setupPlayer = () => {
+             if (videoId && playerRef.current && !player) {
+                const newPlayer = new window.YT.Player(playerRef.current, {
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        playsinline: 1,
+                        rel: 0,
+                    },
+                    events: {
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+                setPlayer(newPlayer);
+            }
         };
-        fetchPlayerParams();
-    }, []);
+
+        if (!window.YT) {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            window.onYouTubeIframeAPIReady = () => {
+                setupPlayer();
+            };
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        } else {
+            setupPlayer();
+        }
+
+        return () => {
+            if (player) {
+                player.destroy();
+                setPlayer(null);
+            }
+        };
+    }, [videoId, onPlayerStateChange]);
+    
+    useEffect(() => {
+        if (player && playlistId) {
+            const videoIdList = (isShuffle ? shuffledPlaylistVideos : playlistVideos).map(v => v.id);
+            const currentIndex = videoIdList.findIndex(id => id === videoId);
+            if (currentIndex !== -1) {
+                player.loadPlaylist(videoIdList, currentIndex);
+            }
+        }
+    }, [player, playlistId, isShuffle, shuffledPlaylistVideos, playlistVideos, videoId]);
+
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -154,28 +239,6 @@ const VideoPlayerPage: React.FC = () => {
             isMounted = false;
         };
     }, [videoId, addVideoToHistory]);
-
-    const shuffledPlaylistVideos = useMemo(() => {
-        if (!isShuffle || playlistVideos.length === 0) return playlistVideos;
-        const currentIndex = playlistVideos.findIndex(v => v.id === videoId);
-        if (currentIndex === -1) return [...playlistVideos].sort(() => Math.random() - 0.5);
-        const otherVideos = [...playlistVideos.slice(0, currentIndex), ...playlistVideos.slice(currentIndex + 1)];
-        const shuffledOthers = otherVideos.sort(() => Math.random() - 0.5);
-        return [playlistVideos[currentIndex], ...shuffledOthers];
-    }, [isShuffle, playlistVideos, videoId]);
-
-    const iframeSrc = useMemo(() => {
-        if (!videoDetails?.id || !playerParams) return '';
-        let src = `https://www.youtubeeducation.com/embed/${videoDetails.id}`;
-        let params = playerParams.startsWith('?') ? playerParams.substring(1) : playerParams;
-        if (currentPlaylist && playlistVideos.length > 0) {
-            const videoIdList = (isShuffle ? shuffledPlaylistVideos : playlistVideos).map(v => v.id);
-            const playlistString = videoIdList.join(',');
-            params += `&playlist=${playlistString}`;
-            if(isLoop) params += `&loop=1`;
-        }
-        return `${src}?${params}`;
-    }, [videoDetails, playerParams, currentPlaylist, playlistVideos, isShuffle, isLoop, shuffledPlaylistVideos]);
     
     const updateUrlParams = (key: string, value: string | null) => {
         const newSearchParams = new URLSearchParams(searchParams);
@@ -201,7 +264,7 @@ const VideoPlayerPage: React.FC = () => {
         reorderVideosInPlaylist(playlistId, startIndex, endIndex);
     };
 
-    if (isLoading || playerParams === null) {
+    if (isLoading) {
         return <VideoPlayerPageSkeleton />;
     }
 
@@ -210,9 +273,7 @@ const VideoPlayerPage: React.FC = () => {
             <div className="flex flex-col md:flex-row gap-6 max-w-[1750px] mx-auto px-4 md:px-6">
                 <div className="flex-grow lg:w-2/3">
                     <div className="aspect-video bg-yt-black rounded-xl overflow-hidden">
-                        {videoId && playerParams && (
-                             <iframe src={`https://www.youtubeeducation.com/embed/${videoId}${playerParams}`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full"></iframe>
-                        )}
+                        <div ref={playerRef} className="w-full h-full" />
                     </div>
                     <div className="mt-4 p-4 rounded-lg bg-red-100 dark:bg-red-900/50 text-black dark:text-yt-white">
                         <h2 className="text-lg font-bold mb-2 text-red-500">動画情報の取得エラー</h2>
@@ -255,7 +316,7 @@ const VideoPlayerPage: React.FC = () => {
             <div className="flex-1 min-w-0 max-w-full">
                 {/* Video Player Area */}
                 <div className="w-full aspect-video bg-yt-black rounded-xl overflow-hidden shadow-lg relative z-10">
-                    <iframe src={iframeSrc} key={iframeSrc} title={videoDetails.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full"></iframe>
+                    <div ref={playerRef} className="w-full h-full" />
                 </div>
 
                 <div className="">
