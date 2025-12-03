@@ -7,6 +7,7 @@ import type { VideoDetails, Video, Comment, Channel } from '../types';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useHistory } from '../contexts/HistoryContext';
 import { usePlaylist } from '../contexts/PlaylistContext';
+import { usePreference } from '../contexts/PreferenceContext';
 import VideoPlayerPageSkeleton from '../components/skeletons/VideoPlayerPageSkeleton';
 import PlaylistModal from '../components/PlaylistModal';
 import DownloadModal from '../components/DownloadModal';
@@ -42,8 +43,8 @@ const VideoPlayerPage: React.FC = () => {
     const [shuffledVideos, setShuffledVideos] = useState<Video[]>([]);
     const shuffleSeedRef = useRef<string | null>(null);
 
-    // New state for Player Mode and Streaming
-    const [playerMode, setPlayerMode] = useState<'player' | 'stream'>('player');
+    // Streaming State
+    const { defaultPlayerMode, setDefaultPlayerMode } = usePreference();
     const [streamData, setStreamData] = useState<any>(null);
     const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
     const [isStreamDataLoading, setIsStreamDataLoading] = useState(false);
@@ -158,10 +159,10 @@ const VideoPlayerPage: React.FC = () => {
     }, [videoId, streamData, isStreamDataLoading]);
 
     useEffect(() => {
-        if (playerMode === 'stream') {
+        if (defaultPlayerMode === 'stream') {
             fetchStreamDataIfNeeded();
         }
-    }, [playerMode, fetchStreamDataIfNeeded]);
+    }, [defaultPlayerMode, fetchStreamDataIfNeeded]);
 
     useEffect(() => {
         let isMounted = true;
@@ -176,7 +177,7 @@ const VideoPlayerPage: React.FC = () => {
                 setComments([]);
                 setRelatedVideos([]);
                 setStreamData(null); // Reset stream data on video change
-                setPlayerMode('player'); // Reset to default player
+                // Note: defaultPlayerMode persists, so we don't reset it here
                 setIsDownloadModalOpen(false); // Close menu on navigation
                 window.scrollTo(0, 0);
             }
@@ -415,7 +416,7 @@ const VideoPlayerPage: React.FC = () => {
             <div className="flex-1 min-w-0 max-w-full">
                 {/* Video Player Area */}
                 <div className="w-full aspect-video bg-yt-black rounded-xl overflow-hidden shadow-lg relative z-10">
-                    {playerMode === 'player' ? (
+                    {defaultPlayerMode === 'player' ? (
                         playerParams && videoId && (
                             <iframe
                                 src={iframeSrc}
@@ -468,14 +469,14 @@ const VideoPlayerPage: React.FC = () => {
                         {/* Player Mode Switch */}
                         <div className="flex bg-yt-light dark:bg-yt-light-black rounded-lg p-1 flex-shrink-0 self-start">
                             <button 
-                                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${playerMode === 'player' ? 'bg-white dark:bg-yt-spec-20 text-black dark:text-white shadow-sm' : 'text-yt-light-gray hover:text-black dark:hover:text-white'}`}
-                                onClick={() => setPlayerMode('player')}
+                                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${defaultPlayerMode === 'player' ? 'bg-white dark:bg-yt-spec-20 text-black dark:text-white shadow-sm' : 'text-yt-light-gray hover:text-black dark:hover:text-white'}`}
+                                onClick={() => setDefaultPlayerMode('player')}
                             >
                                 Player
                             </button>
                             <button 
-                                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${playerMode === 'stream' ? 'bg-white dark:bg-yt-spec-20 text-black dark:text-white shadow-sm' : 'text-yt-light-gray hover:text-black dark:hover:text-white'}`}
-                                onClick={() => setPlayerMode('stream')}
+                                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${defaultPlayerMode === 'stream' ? 'bg-white dark:bg-yt-spec-20 text-black dark:text-white shadow-sm' : 'text-yt-light-gray hover:text-black dark:hover:text-white'}`}
+                                onClick={() => setDefaultPlayerMode('stream')}
                             >
                                 Stream
                             </button>

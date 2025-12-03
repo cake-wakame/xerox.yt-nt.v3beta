@@ -14,13 +14,17 @@ import SubscriptionsPage from './pages/SubscriptionsPage';
 import HistoryPage from './pages/HistoryPage';
 import VideoPlayerPage from './pages/VideoPlayerPage';
 import ManagementPage from './pages/ManagementPage'; // Import the new page
+import LiteModePage from './pages/LiteModePage'; // Import Lite Page
 import { useTheme } from './hooks/useTheme';
 import { AiProvider } from './contexts/AiContext';
+import { usePreference } from './contexts/PreferenceContext';
 import HistoryDeletionModal from './components/HistoryDeletionModal';
 import SearchHistoryDeletionModal from './components/SearchHistoryDeletionModal';
+import UpdateAnnouncementModal from './components/UpdateAnnouncementModal';
 
 const App: React.FC = () => {
   const { theme } = useTheme();
+  const { isLiteMode, checkAppVersion } = usePreference();
   const location = useLocation();
   const isPlayerPage = location.pathname.startsWith('/watch');
   const isShortsPage = location.pathname.startsWith('/shorts');
@@ -28,6 +32,14 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(!isPlayerPage);
   const [isHistoryDeletionModalOpen, setIsHistoryDeletionModalOpen] = useState(false);
   const [isSearchHistoryDeletionModalOpen, setIsSearchHistoryDeletionModalOpen] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+  useEffect(() => {
+    // Check for updates on mount
+    if (checkAppVersion()) {
+        setShowUpdateModal(true);
+    }
+  }, [checkAppVersion]);
 
   useEffect(() => {
     if (isPlayerPage) {
@@ -39,6 +51,16 @@ const App: React.FC = () => {
         setIsSidebarOpen(false);
     }
   }, [location.pathname, isPlayerPage, isShortsPage]);
+
+  // If Lite Mode is active, render ONLY the Lite Page
+  if (isLiteMode) {
+      return (
+          <>
+            <LiteModePage />
+            {showUpdateModal && <UpdateAnnouncementModal onClose={() => setShowUpdateModal(false)} />}
+          </>
+      );
+  }
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
@@ -110,6 +132,9 @@ const App: React.FC = () => {
             isOpen={isSearchHistoryDeletionModalOpen} 
             onClose={closeSearchHistoryDeletionModal} 
             />
+        )}
+        {showUpdateModal && (
+            <UpdateAnnouncementModal onClose={() => setShowUpdateModal(false)} />
         )}
         </div>
     </AiProvider>

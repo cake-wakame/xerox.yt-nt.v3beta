@@ -30,15 +30,14 @@ app.get('/api/stream/:videoId', async (req, res) => {
     // ターゲットURL
     const targetUrl = `https://siawaseok.duckdns.org/api/stream/${videoId}/type2`;
 
-    // 外部APIから取得 (fetchはNode 18+以上で標準使用可能)
+    // 外部APIから取得
     const response = await fetch(targetUrl);
 
     // ステータスコードを転送
     res.status(response.status);
 
-    // ヘッダーを転送 (Content-Type, Content-Length等)
+    // ヘッダーを転送
     response.headers.forEach((val, key) => {
-      // 一部の制御ヘッダーは除外が必要な場合がありますが、基本的には転送します
       res.setHeader(key, val);
     });
 
@@ -46,21 +45,18 @@ app.get('/api/stream/:videoId', async (req, res) => {
       return res.end();
     }
 
-    // Web Standard Stream (fetch) を Node.js Stream (res) にパイプする処理
-    // @ts-ignore: Node環境のFetch Bodyの型定義対策
+    // @ts-ignore
     const reader = response.body.getReader();
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      // 取得したチャンクをクライアントへ書き込み
       res.write(value);
     }
     res.end();
 
   } catch (err) {
     console.error('Error in /api/stream:', err);
-    // すでにヘッダーを送っていない場合のみエラーJSONを返す
     if (!res.headersSent) {
         res.status(500).json({ error: err.message });
     } else {
@@ -147,7 +143,7 @@ app.get('/api/search', async (req, res) => {
     if (!query) return res.status(400).json({ error: "Missing search query" });
 
     const targetPage = parseInt(page);
-    const ITEMS_PER_PAGE = 50; // ユーザーリクエストにより50件に設定
+    const ITEMS_PER_PAGE = 50;
     
     let search = await youtube.search(query);
     
@@ -156,11 +152,8 @@ app.get('/api/search', async (req, res) => {
     let allChannels = [...(search.channels || [])];
     let allPlaylists = [...(search.playlists || [])];
 
-    // 指定ページ分までデータを確保するために続きを取得
     const requiredCount = targetPage * ITEMS_PER_PAGE;
-    
     let continuationAttempts = 0;
-    // 50件ずつ取得しようとすると回数が必要になるため、制限を緩める
     const MAX_ATTEMPTS = 20;
 
     while (allVideos.length < requiredCount && search.has_continuation && continuationAttempts < MAX_ATTEMPTS) {
@@ -176,13 +169,10 @@ app.get('/api/search', async (req, res) => {
     const endIndex = startIndex + ITEMS_PER_PAGE;
 
     const pagedVideos = allVideos.slice(startIndex, endIndex);
-    
-    // 2ページ目以降は動画のみ返す（重複防止とパフォーマンスのため）
     const pagedShorts = targetPage === 1 ? allShorts : [];
     const pagedChannels = targetPage === 1 ? allChannels : [];
     const pagedPlaylists = targetPage === 1 ? allPlaylists : [];
 
-    // まだ動画が残っているか、続きが取得可能なら次ページありとする
     const hasMore = allVideos.length > endIndex || search.has_continuation;
 
     res.status(200).json({
@@ -257,14 +247,13 @@ app.get('/api/channel', async (req, res) => {
 
     const targetPage = parseInt(page);
     
-    // ページネーションロジック修正
     if (targetPage > 1) {
         for (let i = 1; i < targetPage; i++) {
             if (videosFeed.has_continuation) {
                 videosFeed = await videosFeed.getContinuation();
                 videosToReturn = videosFeed.videos || [];
             } else {
-                videosToReturn = []; // 続きがない場合
+                videosToReturn = [];
                 break;
             }
         }
@@ -419,11 +408,7 @@ app.get('/api/shorts', async (req, res) => {
     if (!id) return res.status(400).json({ error: "Missing channel id" });
 
     const channel = await youtube.getChannel(id);
-
-    // ★ これが Shorts タブの正式取得方法
     const shortsFeed = await channel.getShorts();
-
-    // ここを一切加工せず丸ごと返す（完全RAW）
     res.status(200).json(shortsFeed);
 
   } catch (err) {
@@ -434,20 +419,18 @@ app.get('/api/shorts', async (req, res) => {
 
 
 // -------------------------------------------------------------------
-// ホームフィード（旧急上昇） API (/api/fvideo)
+// ホームフィード API (/api/fvideo)
 // -------------------------------------------------------------------
 app.get('/api/fvideo', async (req, res) => {
   try {
     const youtube = await createYoutube();
     const home = await youtube.getHomeFeed();
     let allVideos = home.videos ? [...home.videos] : [];
-    const MAX_VIDEOS = 180; // 目標数 (約150以上)
+    const MAX_VIDEOS = 180;
     
-    // 続きの動画を積極的に取得してボリュームを確保
     let attempts = 0;
     let currentFeed = home;
     
-    // API速度を考慮し、最大6回の試行で止める（1回あたり約30動画なのでこれで180近くなる）
     while (currentFeed.has_continuation && attempts < 6 && allVideos.length < MAX_VIDEOS) {
         try {
             currentFeed = await currentFeed.getContinuation();
@@ -468,14 +451,8 @@ app.get('/api/fvideo', async (req, res) => {
   }
 });
 
-// -------------------------------------------------------------------
-// サーバーサイドAI Fallback Endpoint (/api/ai/completion)
-// Note: Real LLMs are too heavy for serverless functions.
-// This acts as a logic placeholder or lightweight suggestion engine.
-// -------------------------------------------------------------------
 app.get('/api/ai/completion', (req, res) => {
     const { context } = req.query;
-    // Heuristic fallback since we cannot run Phi-3 here
     const topics = ["ASMR", "Gaming", "Vtuber", "Music", "Tech"];
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
     

@@ -22,6 +22,17 @@ interface PreferenceContextType {
   negativeKeywords: Map<string, number>;
   isShortsAutoplayEnabled: boolean;
   
+  // Lite Mode State
+  isLiteMode: boolean;
+  toggleLiteMode: () => void;
+
+  // Persistent Player Mode ('player' or 'stream')
+  defaultPlayerMode: 'player' | 'stream';
+  setDefaultPlayerMode: (mode: 'player' | 'stream') => void;
+
+  // Versioning for Update Notification
+  checkAppVersion: () => boolean; // Returns true if update notification should be shown
+  
   addNgKeyword: (keyword: string) => void;
   removeNgKeyword: (keyword: string) => void;
   
@@ -41,24 +52,25 @@ interface PreferenceContextType {
 
 const PreferenceContext = createContext<PreferenceContextType | undefined>(undefined);
 
+// Current version code to track for update modal
+const CURRENT_APP_VERSION = "3.3.0"; 
+
 export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [ngKeywords, setNgKeywords] = useState<string[]>(() => {
     try { return JSON.parse(window.localStorage.getItem('ngKeywords') || '[]'); } catch { return []; }
   });
   const [ngChannels, setNgChannels] = useState<BlockedChannel[]>(() => {
     try { 
-        // Migration from old string[] format
         const data = JSON.parse(window.localStorage.getItem('ngChannels') || '[]');
-        if (data.length > 0 && typeof data[0] === 'string') return []; // Invalidate old format
+        if (data.length > 0 && typeof data[0] === 'string') return [];
         return data;
     } catch { return []; }
   });
   
   const [hiddenVideos, setHiddenVideos] = useState<HiddenVideo[]>(() => {
     try { 
-        // Migration from old string[] format
         const data = JSON.parse(window.localStorage.getItem('hiddenVideos') || '[]');
-        if (data.length > 0 && typeof data[0] === 'string') return []; // Invalidate old format
+        if (data.length > 0 && typeof data[0] === 'string') return [];
         return data;
     } catch { return []; }
   });
@@ -73,10 +85,25 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isShortsAutoplayEnabled, setIsShortsAutoplayEnabled] = useState<boolean>(() => {
     try {
         const item = window.localStorage.getItem('isShortsAutoplayEnabled');
-        return item !== 'false'; // Default to true if not set or invalid
+        return item !== 'false';
     } catch {
         return true;
     }
+  });
+
+  // Lite Mode State
+  const [isLiteMode, setIsLiteMode] = useState<boolean>(() => {
+      try {
+          return window.localStorage.getItem('isLiteMode') === 'true';
+      } catch { return false; }
+  });
+
+  // Persistent Player Mode
+  const [defaultPlayerMode, _setDefaultPlayerMode] = useState<'player' | 'stream'>(() => {
+      try {
+          const stored = window.localStorage.getItem('defaultPlayerMode');
+          return stored === 'stream' ? 'stream' : 'player';
+      } catch { return 'player'; }
   });
 
   useEffect(() => { localStorage.setItem('ngKeywords', JSON.stringify(ngKeywords)); }, [ngKeywords]);
@@ -88,6 +115,10 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem('isShortsAutoplayEnabled', String(isShortsAutoplayEnabled));
   }, [isShortsAutoplayEnabled]);
+  
+  useEffect(() => {
+      localStorage.setItem('isLiteMode', String(isLiteMode));
+  }, [isLiteMode]);
 
   const addNgKeyword = (k: string) => !ngKeywords.includes(k) && setNgKeywords(p => [...p, k]);
   const removeNgKeyword = (k: string) => setNgKeywords(p => p.filter(x => x !== k));
@@ -113,10 +144,8 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
     const videoToUnhide = hiddenVideos.find(v => v.id === videoId);
     if (!videoToUnhide) return;
 
-    // Remove from hidden list
     setHiddenVideos(prev => prev.filter(v => v.id !== videoId));
 
-    // Decrement negative keywords
     const keywordsToDecrement = [
         ...extractKeywords(videoToUnhide.title),
         ...extractKeywords(videoToUnhide.channelName)
@@ -162,14 +191,40 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
     setIsShortsAutoplayEnabled(prev => !prev);
   };
 
+  const toggleLiteMode = () => {
+      setIsLiteMode(prev => !prev);
+      if (!isLiteMode) { // If turning ON lite mode, refresh might be needed to clear React state or styles issues
+          setTimeout(() => window.location.reload(), 100);
+      } else {
+          setTimeout(() => window.location.reload(), 100);
+      }
+  };
+
+  const setDefaultPlayerMode = (mode: 'player' | 'stream') => {
+      _setDefaultPlayerMode(mode);
+      localStorage.setItem('defaultPlayerMode', mode);
+  };
+
+  const checkAppVersion = () => {
+      const lastSeen = localStorage.getItem('lastSeenAppVersion');
+      if (lastSeen !== CURRENT_APP_VERSION) {
+          localStorage.setItem('lastSeenAppVersion', CURRENT_APP_VERSION);
+          return true;
+      }
+      return false;
+  };
+
   const exportUserData = () => {
     const data = {
       timestamp: new Date().toISOString(),
-      version: '3.0',
+      version: '3.1',
       subscriptions: JSON.parse(localStorage.getItem('subscribedChannels') || '[]'),
       history: JSON.parse(localStorage.getItem('videoHistory') || '[]'),
       playlists: JSON.parse(localStorage.getItem('playlists') || '[]'),
-      preferences: { ngKeywords, ngChannels, hiddenVideos, isShortsAutoplayEnabled }
+      preferences: { 
+          ngKeywords, ngChannels, hiddenVideos, isShortsAutoplayEnabled, 
+          isLiteMode, defaultPlayerMode 
+      }
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -196,12 +251,13 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
             const p = json.preferences;
             localStorage.setItem('ngKeywords', JSON.stringify(p.ngKeywords || []));
             localStorage.setItem('ngChannels', JSON.stringify(p.ngChannels || []));
-            // Legacy support: hiddenVideoIds might be string[]
             const hidden = Array.isArray(p.hiddenVideos) && p.hiddenVideos.every((item: any) => typeof item === 'object') 
                 ? p.hiddenVideos 
                 : [];
             localStorage.setItem('hiddenVideos', JSON.stringify(hidden));
             localStorage.setItem('isShortsAutoplayEnabled', String(p.isShortsAutoplayEnabled ?? true));
+            if(p.isLiteMode !== undefined) localStorage.setItem('isLiteMode', String(p.isLiteMode));
+            if(p.defaultPlayerMode) localStorage.setItem('defaultPlayerMode', p.defaultPlayerMode);
           }
 
           window.location.reload();
@@ -218,6 +274,9 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
   return (
     <PreferenceContext.Provider value={{
       ngKeywords, ngChannels, hiddenVideos, negativeKeywords, isShortsAutoplayEnabled,
+      isLiteMode, toggleLiteMode,
+      defaultPlayerMode, setDefaultPlayerMode,
+      checkAppVersion,
       addNgKeyword, removeNgKeyword, addNgChannel, removeNgChannel, isNgChannel,
       addHiddenVideo, unhideVideo, isvideoHidden, removeNegativeProfileForVideos,
       toggleShortsAutoplay, exportUserData, importUserData

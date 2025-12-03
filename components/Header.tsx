@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 // FIX: Use named imports for react-router-dom components and hooks.
 import { useNavigate, Link } from 'react-router-dom';
@@ -22,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
 
   const { theme, setTheme } = useTheme();
   const { addSearchTerm, clearSearchHistory } = useSearchHistory();
-  const { exportUserData, importUserData, isShortsAutoplayEnabled, toggleShortsAutoplay } = usePreference();
+  const { exportUserData, importUserData, isShortsAutoplayEnabled, toggleShortsAutoplay, toggleLiteMode } = usePreference();
   const { clearHistory } = useHistory();
   const navigate = useNavigate();
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -127,36 +126,46 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
         <Link to="/" className="flex items-center gap-2" aria-label="YouTubeホーム">
             <XeroxLogo className="h-8 w-auto" variant={logoVariant} />
             <div className="hidden sm:flex items-baseline">
-                <span className="text-black dark:text-white text-xl font-bold tracking-tighter font-sans">XeroxYT-NTv3β</span>
+                <span className="text-black dark:text-white text-xl font-bold tracking-tighter font-sans">XeroxYT-NTv3</span>
             </div>
         </Link>
       </div>
 
       {/* Center Section */}
       <div className="flex-1 flex justify-center px-4 lg:px-16 max-w-[720px] mx-auto">
-        <form onSubmit={handleSearch} className="w-full flex items-center gap-4">
-          <div className="flex w-full items-center rounded-full shadow-inner border border-yt-light-gray/20 dark:border-white/10 bg-white/20 dark:bg-black/20 focus-within:border-yt-blue focus-within:bg-white/40 dark:focus-within:bg-black/40 transition-all overflow-hidden ml-0 md:ml-8 backdrop-blur-sm">
-            <div className="flex-1 relative">
-                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none sm:hidden">
+        <div className="w-full flex items-center gap-2 md:gap-4">
+            <form onSubmit={handleSearch} className="flex-1 flex items-center gap-4">
+            <div className="flex w-full items-center rounded-full shadow-inner border border-yt-light-gray/20 dark:border-white/10 bg-white/20 dark:bg-black/20 focus-within:border-yt-blue focus-within:bg-white/40 dark:focus-within:bg-black/40 transition-all overflow-hidden ml-0 md:ml-8 backdrop-blur-sm">
+                <div className="flex-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none sm:hidden">
+                        <SearchIcon />
+                    </div>
+                    <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="検索"
+                    className="w-full h-10 bg-transparent pl-10 sm:pl-4 pr-4 text-base text-black dark:text-white placeholder-yt-light-gray focus:outline-none"
+                    />
+                </div>
+                <button
+                    type="submit"
+                    className="bg-yt-light/50 dark:bg-white/5 h-10 px-6 border-l border-yt-light-gray/20 dark:border-white/10 hover:bg-stone-200 dark:hover:bg-white/10 transition-colors w-16 flex items-center justify-center"
+                    aria-label="検索"
+                >
                     <SearchIcon />
-                 </div>
-                <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="検索"
-                className="w-full h-10 bg-transparent pl-10 sm:pl-4 pr-4 text-base text-black dark:text-white placeholder-yt-light-gray focus:outline-none"
-                />
+                </button>
             </div>
-            <button
-                type="submit"
-                className="bg-yt-light/50 dark:bg-white/5 h-10 px-6 border-l border-yt-light-gray/20 dark:border-white/10 hover:bg-stone-200 dark:hover:bg-white/10 transition-colors w-16 flex items-center justify-center"
-                aria-label="検索"
+            </form>
+            
+            {/* Lite Mode Button - Matching surrounding style */}
+            <button 
+                onClick={toggleLiteMode}
+                className="hidden sm:flex items-center justify-center px-4 py-2 rounded-full bg-yt-light dark:bg-yt-spec-10 text-black dark:text-white text-sm font-semibold hover:bg-gray-200 dark:hover:bg-yt-spec-20 transition-colors whitespace-nowrap"
             >
-                <SearchIcon />
+                Liteモード
             </button>
-          </div>
-        </form>
+        </div>
       </div>
 
       {/* Right Section */}
@@ -180,6 +189,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openHistoryDeletionModal
 
                         <hr className="my-2 border-yt-spec-light-20 dark:border-yt-spec-20" />
                         <div className="px-4 py-2 text-xs font-bold text-yt-light-gray uppercase tracking-wider">一般設定</div>
+                        
+                        <button 
+                            onClick={toggleLiteMode}
+                            className="w-full text-left flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 text-sm text-black dark:text-white sm:hidden"
+                        >
+                            <span>Liteモードに切り替え</span>
+                        </button>
+
                         <label className="flex items-center justify-between px-4 py-2 hover:bg-yt-spec-light-10 dark:hover:bg-yt-spec-10 cursor-pointer">
                             <span className="text-sm text-black dark:text-white">Proxy経由で取得</span>
                             <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
