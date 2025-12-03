@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { usePreference } from '../contexts/PreferenceContext';
 
@@ -41,10 +42,15 @@ const LiteModePage: React.FC = () => {
     };
 
     const fetchKey = async () => {
-        const response = await fetch('https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json');
-        if (!response.ok) throw new Error('キー取得に失敗しました');
-        const jsonData = await response.json();
-        return jsonData.params.trim();
+        try {
+            const response = await fetch('https://raw.githubusercontent.com/siawaseok3/wakame/master/video_config.json');
+            if (!response.ok) throw new Error('キー取得に失敗しました');
+            const jsonData = await response.json();
+            return jsonData.params ? jsonData.params.trim() : '?autoplay=1';
+        } catch (e) {
+            console.error("Failed to fetch key", e);
+            return '?autoplay=1';
+        }
     };
 
     const handleAction = async (actionType: 'embed' | 'stream' | 'download') => {
@@ -80,7 +86,7 @@ const LiteModePage: React.FC = () => {
                     // Fetch from the proxy endpoint that returns the detailed JSON
                     const response = await fetch(`/api/stream/${vId}`);
                     if (!response.ok) {
-                        throw new Error('ストリーム情報の取得に失敗しました。');
+                        throw new Error(`ストリーム情報の取得に失敗しました。 (${response.status})`);
                     }
                     data = await response.json();
                     setStreamData(data);
@@ -88,7 +94,8 @@ const LiteModePage: React.FC = () => {
 
                 if (actionType === 'stream') {
                     setActiveView('player');
-                    createStreamPlayer(data, playerContainerRef.current);
+                    // Small delay to ensure DOM update
+                    setTimeout(() => createStreamPlayer(data, playerContainerRef.current), 0);
                 } else if (actionType === 'download') {
                     setActiveView('download');
                 }
@@ -115,6 +122,7 @@ const LiteModePage: React.FC = () => {
             return;
         }
 
+        container.innerHTML = '';
         const video = document.createElement('video');
         video.controls = true;
         video.autoplay = true;
@@ -125,7 +133,6 @@ const LiteModePage: React.FC = () => {
         video.src = url;
         video.setAttribute('playsinline', '');
         
-        container.innerHTML = '';
         container.appendChild(video);
         
         video.play().catch(e => console.warn("Autoplay prevented:", e));
@@ -151,7 +158,7 @@ const LiteModePage: React.FC = () => {
                         value={urlInput}
                         onChange={(e) => setUrlInput(e.target.value)}
                         placeholder="YouTubeのURLを入力" 
-                        className="flex-1 p-3 border-[1.5px] border-[#e0e3eb] rounded-[10px] text-[1.1rem] outline-none focus:border-[#7c3aed] transition-colors"
+                        className="flex-1 p-3 border-[1.5px] border-[#e0e3eb] rounded-[10px] text-[1.1rem] outline-none focus:border-[#7c3aed] transition-colors text-black"
                     />
                     <div className="flex gap-2">
                         <button onClick={handlePaste} className="bg-[#e0e3eb] border-none rounded-[8px] px-4 py-2 text-[1.1rem] cursor-pointer text-[#555] hover:bg-[#ccc] hover:text-black min-w-[80px]">Paste</button>
@@ -165,25 +172,25 @@ const LiteModePage: React.FC = () => {
                         disabled={isLoading}
                         className="bg-[#7c3aed] text-white border-none rounded-[8px] px-6 py-3 text-[1.1rem] font-semibold cursor-pointer shadow-[0_2px_8px_rgba(124,58,237,0.06)] hover:bg-[#5e3fd7] disabled:opacity-50"
                     >
-                        {isLoading ? `処理中... ${progress}%` : 'youtube player'}
+                        {isLoading && activeView === 'player' ? `処理中... ${progress}%` : 'youtube player'}
                     </button>
                     <button 
                         onClick={() => handleAction('stream')}
                         disabled={isLoading}
                         className="bg-[#7c3aed] text-white border-none rounded-[8px] px-6 py-3 text-[1.1rem] font-semibold cursor-pointer shadow-[0_2px_8px_rgba(124,58,237,0.06)] hover:bg-[#5e3fd7] disabled:opacity-50"
                     >
-                        {isLoading ? `処理中... ${progress}%` : 'ストリーミング'}
+                        {isLoading && activeView === 'player' ? `処理中... ${progress}%` : 'ストリーミング'}
                     </button>
                     <button 
                         onClick={() => handleAction('download')}
                         disabled={isLoading}
                         className="bg-[#10b981] text-white border-none rounded-[8px] px-6 py-3 text-[1.1rem] font-semibold cursor-pointer shadow-[0_2px_8px_rgba(16,185,129,0.06)] hover:bg-[#059669] disabled:opacity-50"
                     >
-                        {isLoading ? `処理中... ${progress}%` : 'ダウンロード'}
+                        {isLoading && activeView === 'download' ? `処理中... ${progress}%` : 'ダウンロード'}
                     </button>
                 </div>
 
-                {error && <div className="text-[#d32f2f] mt-4 text-[0.97em]">{error}</div>}
+                {error && <div className="text-[#d32f2f] mt-4 text-[0.97em] bg-red-50 p-2 rounded">{error}</div>}
 
                 {/* Player Container */}
                 <div 
@@ -195,7 +202,7 @@ const LiteModePage: React.FC = () => {
                 {activeView === 'download' && streamData && (
                     <div className="mt-8 text-left">
                         <h3 className="text-center text-[#3c3e4e] text-xl font-bold mb-4">Download Links</h3>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                             {/* Video Links */}
                             {['1080p', '720p', '480p', '360p', '240p'].map(quality => {
                                 const url = streamData.videourl?.[quality]?.video?.url;
@@ -211,7 +218,7 @@ const LiteModePage: React.FC = () => {
                             {/* Audio Link */}
                             {streamData.videourl?.['144p']?.audio?.url && (
                                 <>
-                                    <h4 className="mt-4 font-bold">オーディオ (音声のみ)</h4>
+                                    <h4 className="mt-4 font-bold text-[#333]">オーディオ (音声のみ)</h4>
                                     <a href={streamData.videourl['144p'].audio.url} target="_blank" rel="noreferrer" className="block bg-[#f7f8fa] border-[1.5px] border-[#e0e3eb] rounded-[8px] p-3 text-[#333] font-medium hover:bg-[#e9ecf0] transition-colors break-all">
                                         Download Audio (M4A)
                                     </a>

@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { extractKeywords } from '../utils/xrai';
 import type { Video } from '../types';
 
@@ -191,14 +191,20 @@ export const PreferenceProvider: React.FC<{ children: ReactNode }> = ({ children
     setIsShortsAutoplayEnabled(prev => !prev);
   };
 
-  const toggleLiteMode = () => {
-      setIsLiteMode(prev => !prev);
-      if (!isLiteMode) { // If turning ON lite mode, refresh might be needed to clear React state or styles issues
-          setTimeout(() => window.location.reload(), 100);
-      } else {
-          setTimeout(() => window.location.reload(), 100);
-      }
-  };
+  const toggleLiteMode = useCallback(() => {
+      // 1. Calculate next state
+      const nextState = !isLiteMode;
+      
+      // 2. Set React State
+      setIsLiteMode(nextState);
+      
+      // 3. Persist IMMEDIATELY to localStorage to avoid race conditions with reload
+      localStorage.setItem('isLiteMode', String(nextState));
+      
+      // 4. Reload page to apply changes (Lite Mode uses a different root structure)
+      // Small delay allows the UI to register the click visually before reload
+      setTimeout(() => window.location.reload(), 50);
+  }, [isLiteMode]);
 
   const setDefaultPlayerMode = (mode: 'player' | 'stream') => {
       _setDefaultPlayerMode(mode);
