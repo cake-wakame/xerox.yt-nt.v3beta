@@ -1,2 +1,2 @@
-
-vercel対応してます
+renderも
+vercelも対応してます
