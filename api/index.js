@@ -561,7 +561,7 @@ app.get('/api/thumbnail/:videoId', async (req, res) => {
 
 // 本番環境でSPA用のフォールバック
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
+  app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }
