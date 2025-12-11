@@ -1,10 +1,6 @@
 export const getProxyThumbnailUrl = (originalUrl: string): string => {
   if (!originalUrl) return '';
   
-  const useProxy = localStorage.getItem('useProxyThumbnail') !== 'false';
-  
-  if (!useProxy) return originalUrl;
-  
   const videoIdMatch = originalUrl.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
   if (videoIdMatch) {
     const videoId = videoIdMatch[1];
